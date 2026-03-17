@@ -4,15 +4,19 @@ import './Home2.css';
 import Scene from '../components/Scene';
 import rightDesign from '../assets/images/HögerDesign.png';
 import leftDesign from '../assets/images/Vänsterdesign.png';
-import overlay2 from '../assets/images/Overlay2.png';
-import portrait1 from '../assets/images/porträtt.jpg';
-import portrait2 from '../assets/images/porträtt2.jpg';
-import portrait3 from '../assets/images/portrait3.jpg';
+import img1 from '../assets/eventimages/DSC00940_small.jpg';
+import img2 from '../assets/eventimages/DSC01084_small.jpg';
+import img3 from '../assets/eventimages/DSC01259_small.jpg';
+import img4 from '../assets/eventimages/DSC01264_small.jpg';
+import img5 from '../assets/eventimages/DSC01322_small.jpg';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 
 const Home2 = () => {
     const { scrollY } = useScroll();
     const [openFaqIndex, setOpenFaqIndex] = useState(null);
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    const galleryImages = [img1, img2, img3, img4, img5];
 
     // Scroll Animations
     const yParallax = useTransform(scrollY, [0, 1000], [0, 150]); // Text moves down slightly
@@ -200,40 +204,34 @@ We announce our events on Instagram. Stay tuned!`
                     </div>
                 </div>
 
-                {/* Triangular Image Gallery */}
+                {/* 5-Image Staggered Gallery */}
                 <div className="image-gallery-section">
                     <div className="image-gallery-container">
-                        <div className="gallery-images-row">
-                            <motion.div
-                                className="gallery-image-item"
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.6, delay: 0.1 }}
-                                style={{ scale: useTransform(scrollY, [0, 2000], [1, 1.05]) }}
+                        <div className="gallery-images-row staggered-gallery">
+                            {galleryImages.map((img, i) => (
+                                <motion.div
+                                    key={i}
+                                    className={`gallery-image-item gallery-item-${i}`}
+                                    initial={{ opacity: 0, y: 50 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, margin: "-50px" }}
+                                    transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+                                    onClick={() => setSelectedImage(i)}
+                                >
+                                    <div className="gallery-hover-overlay">
+                                        <span>View</span>
+                                    </div>
+                                    <img src={img} alt={`Event capture ${i + 1}`} />
+                                </motion.div>
+                            ))}
+                        </div>
+                        <div className="mobile-swipe-hint">
+                            <motion.span 
+                                animate={{ x: [0, 5, 0] }} 
+                                transition={{ repeat: Infinity, duration: 1.5 }}
                             >
-                                <img src={portrait1} alt="Event atmosphere" />
-                            </motion.div>
-                            <motion.div
-                                className="gallery-image-item"
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.6, delay: 0.2 }}
-                                style={{ scale: useTransform(scrollY, [0, 2000], [1, 1.08]) }}
-                            >
-                                <img src={portrait2} alt="DJ performance" />
-                            </motion.div>
-                            <motion.div
-                                className="gallery-image-item"
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.6, delay: 0.3 }}
-                                style={{ scale: useTransform(scrollY, [0, 2000], [1, 1.06]) }}
-                            >
-                                <img src={portrait3} alt="Crowd dancing" />
-                            </motion.div>
+                                ← Swipe to see more →
+                            </motion.span>
                         </div>
                     </div>
                 </div>
@@ -247,32 +245,23 @@ We announce our events on Instagram. Stay tuned!`
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.6 }}
                                 className="next-event-content"
+                                style={{ textAlign: "center", padding: "4rem 2rem" }}
                             >
                                 <p className="next-event-label">Next Event</p>
-                                <h2 className="next-event-title">Mister French</h2>
+                                <h2 className="next-event-title" style={{ fontSize: "clamp(2rem, 5vw, 4rem)", marginBottom: "1rem" }}>Stay Tuned</h2>
 
-                                <div className="event-details">
-                                    <div className="event-detail-item">
-                                        <span className="detail-label">Date</span>
-                                        <span className="detail-value">2026-02-28</span>
-                                    </div>
-                                    <div className="event-detail-item">
-                                        <span className="detail-label">Time</span>
-                                        <span className="detail-value">22:00 - 03:00</span>
-                                    </div>
-                                    <div className="event-detail-item">
-                                        <span className="detail-label">Location</span>
-                                        <span className="detail-value">Mister French</span>
-                                    </div>
-                                </div>
+                                <p style={{
+                                    fontSize: "1.2rem",
+                                    color: "var(--text-muted)",
+                                    maxWidth: "600px",
+                                    margin: "0 auto",
+                                    lineHeight: "1.6"
+                                }}>
+                                    We are currently working on our next event. Keep an eye on our Instagram for early access and updates.
+                                </p>
 
-                                <div className="event-vibe">
-                                    <span className="detail-label">Vibe</span>
-                                    <span className="detail-value">Tech House</span>
-                                </div>
-
-                                <Link to="/event/1775961" className="next-event-button">
-                                    <span>View the Event</span>
+                                <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener noreferrer" className="next-event-button" style={{ marginTop: "2rem", display: "inline-flex", textDecoration: 'none' }}>
+                                    <span>Follow on Instagram</span>
                                     <motion.span
                                         className="button-arrow"
                                         initial={{ x: 0 }}
@@ -281,7 +270,7 @@ We announce our events on Instagram. Stay tuned!`
                                     >
                                         →
                                     </motion.span>
-                                </Link>
+                                </a>
                             </motion.div>
                         </div>
                     </section>
@@ -329,6 +318,52 @@ We announce our events on Instagram. Stay tuned!`
                     </section>
                 </div>
             </div>
+
+            {/* Lightbox / Image Modal */}
+            <AnimatePresence>
+                {selectedImage !== null && (
+                    <motion.div 
+                        className="lightbox-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <button className="lightbox-close" onClick={() => setSelectedImage(null)}>✕</button>
+                        
+                        <button 
+                            className="lightbox-nav lightbox-prev" 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedImage((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+                            }}
+                        >
+                            ←
+                        </button>
+
+                        <motion.img 
+                            src={galleryImages[selectedImage]} 
+                            alt="Enlarged event capture" 
+                            className="lightbox-image"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+
+                        <button 
+                            className="lightbox-nav lightbox-next" 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedImage((prev) => (prev + 1) % galleryImages.length);
+                            }}
+                        >
+                            →
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

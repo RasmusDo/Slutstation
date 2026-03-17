@@ -100,25 +100,24 @@ const EventList = () => {
         }}>
 
             {/* Upcoming Events Section */}
-            {upcomingEvents && upcomingEvents.length > 0 && (
-                <div style={{ marginBottom: '4rem' }}>
-                    <h2 style={{
-                        fontSize: '2rem',
-                        marginBottom: '2rem',
-                        color: 'var(--text-primary)',
-                        fontFamily: 'var(--font-heading)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '4px',
-                        fontWeight: '300',
-                        borderBottom: '2px solid var(--accent-color)', // Use var
-                        paddingBottom: '1rem',
-                        // Remove gradient text for better readability on light mode or use a darker gradient
-                        background: 'none',
-                        WebkitTextFillColor: 'initial',
-                    }}>
-                        Upcoming Events
-                    </h2>
+            <div style={{ marginBottom: '4rem' }}>
+                <h2 style={{
+                    fontSize: '2rem',
+                    marginBottom: '2rem',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'var(--font-heading)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '4px',
+                    fontWeight: '300',
+                    borderBottom: '2px solid var(--accent-color)',
+                    paddingBottom: '1rem',
+                    background: 'none',
+                    WebkitTextFillColor: 'initial',
+                }}>
+                    Upcoming Events
+                </h2>
 
+                {upcomingEvents && upcomingEvents.length > 0 ? (
                     <div className="event-container" style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -126,8 +125,19 @@ const EventList = () => {
                     }}>
                         {upcomingEvents.map((event, index) => renderEventCard(event, index))}
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div style={{
+                        padding: '3rem',
+                        textAlign: 'center',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                    }}>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Stay Tuned</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>We are currently working on the next event. Check back soon or keep an eye on our Instagram.</p>
+                        <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-color)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Follow on Instagram →</a>
+                    </div>
+                )}
+            </div>
 
             {/* Past Events Section */}
             {pastEvents && pastEvents.length > 0 && (

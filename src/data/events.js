@@ -115,8 +115,9 @@ export async function getUpcomingEvents() {
 
         if (billettoEvents && billettoEvents.length > 0) {
             const mappedEvents = mapBillettoEvents(billettoEvents);
-            console.log(`Loaded ${mappedEvents.length} upcoming events from Billetto API`);
-            return mappedEvents;
+            const activeEvents = filterActiveEvents(mappedEvents);
+            console.log(`Loaded ${activeEvents.length} upcoming events from Billetto API`);
+            return activeEvents;
         }
 
         console.log('No upcoming events from Billetto API');

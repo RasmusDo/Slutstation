@@ -12,6 +12,7 @@ import PosterLanding from './pages/PosterLanding';
 import Home2 from './pages/Home2';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import DJApplication from './pages/DJApplication';
+import Ambassador from './pages/Ambassador';
 import ScrollToTop from './components/ScrollToTop';
 import PageTransition from './components/PageTransition';
 
@@ -31,6 +32,7 @@ const AnimatedRoutes = () => {
         <Route path="/minimal" element={<PageTransition><PosterLanding /></PageTransition>} />
         <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
         <Route path="/dj-application" element={<PageTransition><DJApplication /></PageTransition>} />
+        {/*         <Route path="/ambassador" element={<PageTransition><Ambassador /></PageTransition>} /> */}
       </Routes>
     </AnimatePresence>
   );

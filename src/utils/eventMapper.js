@@ -6,7 +6,7 @@ import fredagenPoster from '../assets/images/eventposters/Fredagen.png';
 import lastpathPoster from '../assets/images/eventposters/Lastpath.png';
 import outdoorsPoster from '../assets/images/eventposters/Outdoors.jpg';
 import storstaPoster from '../assets/images/eventposters/storsta.png';
-import posterNew from '../assets/images/eventposters/posternew.png';
+import poster0214 from '../assets/images/eventposters/0214.png';
 
 /**
  * Map Billetto event to application event format
@@ -98,6 +98,7 @@ export function mapBillettoEvent(billettoEvent, index = 0) {
 
     // Custom fallback images for past events without images
     const defaultImages = [
+        poster0214,
         lastpathPoster,
         outdoorsPoster,
         fredagenPoster,
