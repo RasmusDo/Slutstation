@@ -28,7 +28,7 @@ const Home2 = () => {
             question: "What does it mean to become a member?",
             answer: `There are two types of membership:
 
-General Membership (required) – A must to attend our events, access to location drops, tickets etc. This makes you a member in Kulturföreningen Musikbopp.
+General. Membership (required) – A must to attend our events, access to location drops, tickets etc. This makes you a member in Kulturföreningen Musikbopp.
 
 Selective Membership – A curated, limited tier for those who are deeply connected to what we do. Selective members get access to our most private parties and internal spaces. You're in the loop and one step ahead.
 
@@ -226,8 +226,8 @@ We announce our events on Instagram. Stay tuned!`
                             ))}
                         </div>
                         <div className="mobile-swipe-hint">
-                            <motion.span 
-                                animate={{ x: [0, 5, 0] }} 
+                            <motion.span
+                                animate={{ x: [0, 5, 0] }}
                                 transition={{ repeat: Infinity, duration: 1.5 }}
                             >
                                 ← Swipe to see more →
@@ -322,7 +322,7 @@ We announce our events on Instagram. Stay tuned!`
             {/* Lightbox / Image Modal */}
             <AnimatePresence>
                 {selectedImage !== null && (
-                    <motion.div 
+                    <motion.div
                         className="lightbox-overlay"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -330,9 +330,9 @@ We announce our events on Instagram. Stay tuned!`
                         onClick={() => setSelectedImage(null)}
                     >
                         <button className="lightbox-close" onClick={() => setSelectedImage(null)}>✕</button>
-                        
-                        <button 
-                            className="lightbox-nav lightbox-prev" 
+
+                        <button
+                            className="lightbox-nav lightbox-prev"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedImage((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
@@ -341,9 +341,9 @@ We announce our events on Instagram. Stay tuned!`
                             ←
                         </button>
 
-                        <motion.img 
-                            src={galleryImages[selectedImage]} 
-                            alt="Enlarged event capture" 
+                        <motion.img
+                            src={galleryImages[selectedImage]}
+                            alt="Enlarged event capture"
                             className="lightbox-image"
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -352,8 +352,8 @@ We announce our events on Instagram. Stay tuned!`
                             onClick={(e) => e.stopPropagation()}
                         />
 
-                        <button 
-                            className="lightbox-nav lightbox-next" 
+                        <button
+                            className="lightbox-nav lightbox-next"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedImage((prev) => (prev + 1) % galleryImages.length);
