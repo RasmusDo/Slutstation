@@ -349,7 +349,7 @@ const EventDetail = () => {
                         </div>
 
                         <a
-                            href={billettoLink}
+                            href={event.ticketLink || billettoLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{

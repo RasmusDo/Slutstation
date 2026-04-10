@@ -226,8 +226,8 @@ We announce our events on Instagram. Stay tuned!`
                             ))}
                         </div>
                         <div className="mobile-swipe-hint">
-                            <motion.span 
-                                animate={{ x: [0, 5, 0] }} 
+                            <motion.span
+                                animate={{ x: [0, 5, 0] }}
                                 transition={{ repeat: Infinity, duration: 1.5 }}
                             >
                                 ← Swipe to see more →
@@ -248,7 +248,7 @@ We announce our events on Instagram. Stay tuned!`
                                 style={{ textAlign: "center", padding: "4rem 2rem" }}
                             >
                                 <p className="next-event-label">Next Event</p>
-                                <h2 className="next-event-title" style={{ fontSize: "clamp(2rem, 5vw, 4rem)", marginBottom: "1rem" }}>Stay Tuned</h2>
+                                <h2 className="next-event-title" style={{ fontSize: "clamp(2rem, 5vw, 4rem)", marginBottom: "1rem" }}>Sunset Sessions</h2>
 
                                 <p style={{
                                     fontSize: "1.2rem",
@@ -257,11 +257,11 @@ We announce our events on Instagram. Stay tuned!`
                                     margin: "0 auto",
                                     lineHeight: "1.6"
                                 }}>
-                                    We are currently working on our next event. Keep an eye on our Instagram for early access and updates.
+                                    We are hosting our first Tech House Open-Air of the 2026 season. Don´t miss out.
                                 </p>
 
-                                <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener noreferrer" className="next-event-button" style={{ marginTop: "2rem", display: "inline-flex", textDecoration: 'none' }}>
-                                    <span>Follow on Instagram</span>
+                                <a href="/event/1900933" className="next-event-button" style={{ marginTop: "2rem", display: "inline-flex", textDecoration: 'none' }}>
+                                    <span>Event Details</span>
                                     <motion.span
                                         className="button-arrow"
                                         initial={{ x: 0 }}
@@ -322,7 +322,7 @@ We announce our events on Instagram. Stay tuned!`
             {/* Lightbox / Image Modal */}
             <AnimatePresence>
                 {selectedImage !== null && (
-                    <motion.div 
+                    <motion.div
                         className="lightbox-overlay"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -330,9 +330,9 @@ We announce our events on Instagram. Stay tuned!`
                         onClick={() => setSelectedImage(null)}
                     >
                         <button className="lightbox-close" onClick={() => setSelectedImage(null)}>✕</button>
-                        
-                        <button 
-                            className="lightbox-nav lightbox-prev" 
+
+                        <button
+                            className="lightbox-nav lightbox-prev"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedImage((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
@@ -341,9 +341,9 @@ We announce our events on Instagram. Stay tuned!`
                             ←
                         </button>
 
-                        <motion.img 
-                            src={galleryImages[selectedImage]} 
-                            alt="Enlarged event capture" 
+                        <motion.img
+                            src={galleryImages[selectedImage]}
+                            alt="Enlarged event capture"
                             className="lightbox-image"
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -352,8 +352,8 @@ We announce our events on Instagram. Stay tuned!`
                             onClick={(e) => e.stopPropagation()}
                         />
 
-                        <button 
-                            className="lightbox-nav lightbox-next" 
+                        <button
+                            className="lightbox-nav lightbox-next"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedImage((prev) => (prev + 1) % galleryImages.length);

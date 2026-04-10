@@ -1,6 +1,7 @@
 import { fetchBillettoEvents, fetchPastEvents, fetchUpcomingEvents, fetchBillettoEventById, isConfigured } from '../services/billettoService';
 import { mapBillettoEvents, filterActiveEvents } from '../utils/eventMapper';
 import { mergeEventData } from '../utils/eventMerger';
+import blindBirdImg from '../assets/images/events/blind.jpg';
 
 // Static fallback events (used if API fails or is not configured)
 const staticEvents = [];
@@ -11,6 +12,20 @@ const staticEvents = [];
  * This data will be merged with live API data for rich, customizable event pages
  */
 const customEventData = {
+    '1900933': {
+        title: 'Sunset Sessions',
+        customDescription: 'We are hosting our first Tech House Open-Air of the 2026 season. Don´t miss out.',
+        customImage: blindBirdImg,
+        ticketLink: 'https://billetto.se/e/slutstation-biljetter-1900933',
+        lineup: [],
+        venue: {
+            name: 'Josefina',
+            capacity: '1000',
+            facilities: ['Premium Sound System', 'Custom made stage design', 'Outdoor Venue'],
+            accessibility: 'Location: Josefina, Stockholm'
+        },
+        sections: []
+    },
     '1775961': {
         title: 'Mister French',
         customDescription: 'Join us for an unforgettable night of Tech-house and Minimal house.\n\nTogether with Mister French, we bring the Tech-house sounds of Ibiza to Stockholm for one night only. Experience carefully curated sounds in an vibrant setting where the music takes center stage.\n\nThis is not just another club night, it\'s a journey through sound, atmosphere, and connection.\n\nNo Membership required.',
@@ -205,6 +220,10 @@ export async function getEventById(id) {
 
     if (customData || apiEvent) {
         const mergedEvent = mergeEventData(apiEvent, customData);
+        // Ensure ID is always set (needed especially when there is no API data)
+        if (!mergedEvent.id && id) {
+            mergedEvent.id = id;
+        }
         console.log('Merged Event:', mergedEvent);
         console.log(`Event ${id}: ${customData ? 'HAS Custom content ✓' : 'NO custom content ✗'} + ${apiEvent ? 'HAS API data ✓' : 'NO API data ✗'}`);
         return mergedEvent;

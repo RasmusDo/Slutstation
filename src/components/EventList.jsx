@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { getUpcomingEvents, getPastEvents } from '../data/events';
+import { getUpcomingEvents, getPastEvents, getEventById } from '../data/events';
 
 
 const EventList = () => {
     const [hoveredId, setHoveredId] = useState(null);
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [pastEvents, setPastEvents] = useState([]);
+    const [fallbackEvent, setFallbackEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -29,6 +30,11 @@ const EventList = () => {
                 ]);
                 setUpcomingEvents(upcoming);
                 setPastEvents(past);
+                // If API returns no upcoming events, load event 1900933 as fallback
+                if (!upcoming || upcoming.length === 0) {
+                    const fallback = await getEventById('1900933');
+                    setFallbackEvent(fallback);
+                }
             } catch (error) {
                 console.error('Error loading events:', error);
                 setUpcomingEvents([]);
@@ -125,18 +131,11 @@ const EventList = () => {
                     }}>
                         {upcomingEvents.map((event, index) => renderEventCard(event, index))}
                     </div>
-                ) : (
-                    <div style={{
-                        padding: '3rem',
-                        textAlign: 'center',
-                        background: 'rgba(255, 255, 255, 0.02)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
-                    }}>
-                        <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Stay Tuned</h3>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>We are currently working on the next event. Check back soon or keep an eye on our Instagram.</p>
-                        <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-color)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>Follow on Instagram →</a>
+                ) : fallbackEvent ? (
+                    <div className="event-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        {renderEventCard(fallbackEvent, 0)}
                     </div>
-                )}
+                ) : null}
             </div>
 
             {/* Past Events Section */}
