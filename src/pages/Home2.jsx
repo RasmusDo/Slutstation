@@ -28,7 +28,7 @@ const Home2 = () => {
             question: "What does it mean to become a member?",
             answer: `There are two types of membership:
 
-General Membership (required) – A must to attend our events, access to location drops, tickets etc. This makes you a member in Kulturföreningen Musikbopp.
+General. Membership (required) – A must to attend our events, access to location drops, tickets etc. This makes you a member in Kulturföreningen Musikbopp.
 
 Selective Membership – A curated, limited tier for those who are deeply connected to what we do. Selective members get access to our most private parties and internal spaces. You're in the loop and one step ahead.
 
