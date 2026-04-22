@@ -14,6 +14,15 @@ const EventDetail = () => {
     const billettoLink = 'https://billetto.se/e/slutstation-biljetter-1775961';
 
     useEffect(() => {
+        // Lägg till Billetto widget-script dynamiskt
+        if (!document.getElementById('billetto-widget-script')) {
+            const script = document.createElement('script');
+            script.id = 'billetto-widget-script';
+            script.src = 'https://billetto.se/widget.js';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
         async function loadEvent() {
             setLoading(true);
             try {
@@ -37,6 +46,27 @@ const EventDetail = () => {
 
         loadEvent();
     }, [eventId]);
+
+    useEffect(() => {
+        if (!loading) {
+            const searchParams = new URLSearchParams(location.search);
+            if (searchParams.get('openWidget') === 'true') {
+                const triggerWidget = () => {
+                    const widget = document.querySelector('billetto-organiser-widget');
+                    if (widget) {
+                        const btn = widget.querySelector('button') || (widget.shadowRoot && widget.shadowRoot.querySelector('button'));
+                        if (btn) btn.click();
+                        else widget.click();
+                    }
+                };
+                
+                // Try opening multiple times in case script or shadow DOM is slow
+                setTimeout(triggerWidget, 500);
+                setTimeout(triggerWidget, 1000);
+                setTimeout(triggerWidget, 2000);
+            }
+        }
+    }, [location.search, loading]);
 
     if (loading) {
         return (
@@ -348,31 +378,72 @@ const EventDetail = () => {
                             </div>
                         </div>
 
-                        <a
-                            href={event.ticketLink || billettoLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                                display: 'block',
-                                width: '100%',
-                                padding: '1rem',
-                                textAlign: 'center',
-                                backgroundColor: 'var(--accent-color)',
-                                color: '#000',
-                                textDecoration: 'none',
-                                fontFamily: 'var(--font-display)',
-                                fontSize: '1.5rem',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.1em',
-                                borderRadius: '4px',
-                                transition: 'all 0.3s ease',
-                                cursor: 'pointer'
-                            }}
-                            onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
-                            onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
-                        >
-                            Get Tickets →
-                        </a>
+                        {eventId === '1900933' ? (
+                            <div 
+                                style={{
+                                    position: 'relative',
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '1rem',
+                                    textAlign: 'center',
+                                    backgroundColor: 'var(--accent-color)',
+                                    color: '#000',
+                                    fontFamily: 'var(--font-display)',
+                                    fontSize: '1.5rem',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    borderRadius: '4px',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'pointer',
+                                    overflow: 'hidden'
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                            >
+                                <span>Buy Ticket</span>
+                                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0.01, zIndex: 10 }}>
+                                    <div style={{ transform: 'scale(10)', transformOrigin: 'center', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                        <billetto-organiser-widget 
+                                            type="button" 
+                                            organiser="4429536" 
+                                            organization="billetto.se" 
+                                            lang="en" 
+                                            theme="dark" 
+                                            color="#c5a059" 
+                                            button-style="medium" 
+                                            font-family="Arial, Helvetica, sans-serif" 
+                                            background-color="#FFFFFF"
+                                        ></billetto-organiser-widget>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <a
+                                href={event.ticketLink || billettoLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    padding: '1rem',
+                                    textAlign: 'center',
+                                    backgroundColor: 'var(--accent-color)',
+                                    color: '#000',
+                                    textDecoration: 'none',
+                                    fontFamily: 'var(--font-display)',
+                                    fontSize: '1.5rem',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.1em',
+                                    borderRadius: '4px',
+                                    transition: 'all 0.3s ease',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                                onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                            >
+                                Get Tickets →
+                            </a>
+                        )}
                     </motion.div>
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Home2.css';
 import Scene from '../components/Scene';
@@ -17,6 +17,16 @@ const Home2 = () => {
     const [selectedImage, setSelectedImage] = useState(null);
 
     const galleryImages = [img1, img2, img3, img4, img5];
+
+    useEffect(() => {
+        if (!document.getElementById('billetto-widget-script')) {
+            const script = document.createElement('script');
+            script.id = 'billetto-widget-script';
+            script.src = 'https://billetto.se/widget.js';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+    }, []);
 
     // Scroll Animations
     const yParallax = useTransform(scrollY, [0, 1000], [0, 150]); // Text moves down slightly
@@ -77,10 +87,10 @@ We announce our events on Instagram. Stay tuned!`
                         height: '100%',
                         zIndex: 1,
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        pointerEvents: 'none',
-                        mixBlendMode: 'difference' // Using difference so white text turns black over white logo
+                        pointerEvents: 'none'
                     }}>
                         <h1 style={{
                             color: '#ffffff',
@@ -91,10 +101,44 @@ We announce our events on Instagram. Stay tuned!`
                             textAlign: 'center',
                             lineHeight: 0.9,
                             margin: 0,
-                            letterSpacing: '-0.02em'
+                            letterSpacing: '-0.02em',
+                            mixBlendMode: 'difference' // Moved from wrapper to text
                         }}>
                             Music<br />in mind.
                         </h1>
+
+                        <Link 
+                            to="/event/1900933?openWidget=true"
+                            style={{
+                                marginTop: '2rem',
+                                position: 'relative',
+                                pointerEvents: 'auto',
+                                display: 'inline-block',
+                                padding: '1rem 2.5rem',
+                                backgroundColor: 'var(--accent-color)',
+                                color: '#ffffff',
+                                fontFamily: 'var(--font-display)',
+                                fontSize: '1.5rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.1em',
+                                borderRadius: '4px',
+                                textDecoration: 'none',
+                                transition: 'all 0.3s ease',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                overflow: 'hidden'
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.5)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
+                            }}
+                        >
+                            <span>Buy Tickets</span>
+                        </Link>
                     </div>
                 </section>
 

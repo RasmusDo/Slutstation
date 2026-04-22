@@ -1,7 +1,7 @@
 import { fetchBillettoEvents, fetchPastEvents, fetchUpcomingEvents, fetchBillettoEventById, isConfigured } from '../services/billettoService';
 import { mapBillettoEvents, filterActiveEvents } from '../utils/eventMapper';
 import { mergeEventData } from '../utils/eventMerger';
-import blindBirdImg from '../assets/images/events/blind.jpg';
+import eventImg from '../assets/images/events/FINALPOSTERHQ2.png';
 
 // Static fallback events (used if API fails or is not configured)
 const staticEvents = [];
@@ -14,16 +14,33 @@ const staticEvents = [];
 const customEventData = {
     '1900933': {
         title: 'Sunset Sessions',
-        customDescription: 'We are hosting our first Tech House Open-Air of the 2026 season. Don´t miss out.',
-        customImage: blindBirdImg,
+        customDescription: 'The biggest outdoor Tech-House event in Stockholm Don´t miss out.\n\nWe bring to you our best lineup to date.\nHeads-up: we are strictly real Tech-House for this one.\n18+\n\n- Outdoor as the sun sets.\n- Huge production.\n- International Artists\n(previously played at Music On, Destino, Amnesia, etc.)',
+        customImage: eventImg,
         ticketLink: 'https://billetto.se/e/slutstation-biljetter-1900933',
-        lineup: [],
         venue: {
             name: 'Josefina',
             capacity: '1000',
-            facilities: ['Premium Sound System', 'Custom made stage design', 'Outdoor Venue'],
-            accessibility: 'Location: Josefina, Stockholm'
+            facilities: ['Outdoor Venue as the sun sets', 'Huge production & Sound System', 'International Artists'],
+            accessibility: 'Location: Josefina, Galärvarvsvägen 10, Stockholm'
         },
+        lineup: [{
+            name: 'JOEY DANIEL',
+            bio: 'Dutch DJ Joey Daniel has built a global reputation for his signature heavy, rolling tech-house grooves and legendary marathon sets.',
+            link: 'https://soundcloud.com/joey-daniel',
+            style: 'Tech House'
+        },
+        {
+            name: 'DA VID',
+            bio: 'Renowned for his technical precision and sophisticated sound, Italian artist Da Vid has become a staple of the Music On roster, delivering high-energy performances on some of the world’s most iconic stages.',
+            link: 'https://soundcloud.com/da_vid_music',
+            style: 'Tech House'
+        },
+        {
+            name: 'APEX',
+            bio: 'The rising duo from Sweden. Apex are quickly making a name for themselves in the swedish music scene.',
+            link: 'https://soundcloud.com/apex-718106271',
+            style: 'Deep Tech'
+        }],
         sections: []
     },
     '1775961': {
