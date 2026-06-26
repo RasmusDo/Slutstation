@@ -36,7 +36,7 @@ const Navbar = () => {
     const closeMobileMenu = () => setMobileMenuOpen(false);
 
     const navLinks = [
-        { name: 'Home', path: '/' },
+        { name: 'Home!!!', path: '/' },
         { name: 'Events', path: '/events' },
         { name: 'Membership', path: '/membership' },
         { name: 'Info', path: '/info' },
