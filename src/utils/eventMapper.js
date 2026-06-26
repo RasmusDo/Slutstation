@@ -6,7 +6,7 @@ import fredagenPoster from '../assets/images/eventposters/Fredagen.png';
 import lastpathPoster from '../assets/images/eventposters/Lastpath.png';
 import outdoorsPoster from '../assets/images/eventposters/Outdoors.jpg';
 import storstaPoster from '../assets/images/eventposters/storsta.png';
-import poster0214 from '../assets/images/eventposters/0214.png';
+import poster0214 from '../assets/images/eventposters/0214.PNG';
 
 /**
  * Map Billetto event to application event format
@@ -120,7 +120,7 @@ export function mapBillettoEvent(billettoEvent, index = 0) {
 
     if (!eventImage) {
         if (isUpcoming) {
-            eventImage = posterNew;
+            eventImage = poster0214;
         } else {
             eventImage = defaultImages[index % defaultImages.length];
         }
