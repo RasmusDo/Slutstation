@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Work with us · Slutstation</title>
+  <meta name="description" content="Volunteer at Slutstation events, or bring people with your own code." />
+  <meta name="theme-color" content="#0a0b0f" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
+  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
+  <!-- Device tier, decided before the stylesheet so the first paint is already
+       the affordable one. Full rationale in index.html. -->
+  <script>
+    (function () {
+      var el = document.documentElement, n = navigator, c = n.connection || {};
+      var mem = n.deviceMemory || 0, cores = n.hardwareConcurrency || 0;
+      var tier = matchMedia("(pointer: coarse)").matches ? "mid" : "high";
+      if (mem && mem <= 4) tier = "low";
+      else if (mem && mem <= 6 && cores && cores <= 4) tier = "low";
+      if (c.saveData === true || /(^|-)(2g|slow-2g)$/.test(c.effectiveType || "")) tier = "low";
+      if (matchMedia("(prefers-reduced-transparency: reduce)").matches) tier = "low";
+      el.dataset.tier = tier;
+    })();
+  </script>
+  <link rel="stylesheet" crossorigin href="/styles.css">
+  <link rel="stylesheet" crossorigin href="/account.css">
+</head>
+<body class="inner">
+  <div class="announce" id="announce">
+    <p>✦ <span class="full"><span data-i18n="announce.text">No upcoming events announced yet.</span>&nbsp;</span><a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" data-i18n="announce.link">Follow us on Instagram →</a></p>
+    <button class="x" id="announceX" aria-label="Dismiss" data-i18n-attr="aria-label:announce.dismiss">×</button>
+  </div>
+
+  <div class="grain"></div>
+  <div class="hero-bg acc-bg" id="heroBg" aria-hidden="true">
+    <div class="hero-bg-tint"></div>
+  </div>
+
+  <header class="nav" id="nav">
+    <a href="/" class="nav-logo">
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation logo" />
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="/#events" data-i18n="nav.events">Events</a>
+      <a href="/#about" data-i18n="nav.about">About</a>
+      <a href="/tickets.html" data-i18n="nav.tickets">Tickets</a>
+      <a href="/account.html" data-i18n="nav.myaccount">My account</a>
+      <a href="/work.html" data-i18n="nav.work">Work with us</a>
+      <a href="/staff.html" id="navStaff" hidden data-i18n="nav.staff">Staff</a>
+      <a href="/admin.html" id="navAdmin" hidden data-i18n="nav.admin">Admin</a>
+    </nav>
+    <div class="nav-cta">
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main class="page acc-page">
+    <div class="wrap">
+
+      <div class="section-head" style="text-align:center;margin-inline:auto;">
+        <span class="eyebrow" style="justify-content:center;" data-i18n="work.eyebrow">Work with us</span>
+        <h2 data-i18n="work.title">Two ways in besides a ticket</h2>
+        <p style="margin-inline:auto;" data-i18n="work.lead">We build every event ourselves, from the rig to the room. If you want to be part of that, or you have an audience who should be here, this is where you say so.</p>
+      </div>
+
+      <!-- Signed out: the pitch, and a way in -->
+      <section id="workAuth" hidden>
+        <div class="form-shell acc-panel acc-narrow" style="text-align:center;">
+          <h3 style="font-weight:600;font-size:1.2rem;" data-i18n="work.signinT">Sign in first</h3>
+          <p style="color:var(--muted);margin-top:8px;" data-i18n="work.signinL">Both applications go on your account, so we know who we are talking to and do not have to ask you for a name and a phone number you have already given us.</p>
+          <p style="margin-top:20px;">
+            <a href="/account.html" class="btn btn-primary btn-sm" data-i18n="work.signinCta">Sign in or create an account</a>
+          </p>
+        </div>
+      </section>
+
+      <section id="workLoading">
+        <div class="form-shell acc-panel acc-narrow acc-loading">
+          <span class="acc-spinner" aria-hidden="true"></span><p data-i18n="work.loading">Loading…</p>
+        </div>
+      </section>
+
+      <section id="workMain" hidden>
+
+        <!-- Both options first, side by side and above the fold. The forms are
+             long, and stacking them meant scrolling past one to discover the
+             other. Nothing opens until you have chosen. -->
+        <div class="work-pick" role="tablist">
+          <button type="button" class="work-opt" data-open="vol" role="tab" aria-selected="false" aria-controls="volCard">
+            <span class="work-opt-title" data-i18n="work.volEyebrow">Volunteer</span>
+            <span class="work-opt-sub" data-i18n="work.volPick">Work a night, get in free.</span>
+            <span class="work-opt-go" aria-hidden="true">+</span>
+          </button>
+          <button type="button" class="work-opt" data-open="cre" role="tab" aria-selected="false" aria-controls="creCard">
+            <span class="work-opt-title" data-i18n="work.creEyebrow">Creators and promoters</span>
+            <span class="work-opt-sub" data-i18n="work.crePick">Bring people, get paid for it.</span>
+            <span class="work-opt-go" aria-hidden="true">+</span>
+          </button>
+        </div>
+
+        <!-- ---------- VOLUNTEER ---------- -->
+        <div class="form-shell acc-panel work-card" id="volCard" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="work.volTitle">Work a night, get in free</h3>
+            <p data-i18n="work.volLead">Door, bar, building the rig, shooting the night. You get in free on the events you work, you keep your tier, and you are in the room before anyone else is.</p>
+          </div>
+
+          <ul class="work-perks">
+            <li><span class="acc-dot"></span><span data-i18n="work.volPerk1">Free entry to every event you work.</span></li>
+            <li><span class="acc-dot"></span><span data-i18n="work.volPerk2">The nights you work still count towards your tier.</span></li>
+            <li><span class="acc-dot"></span><span data-i18n="work.volPerk3">First to hear about everything, and a say in what we build next.</span></li>
+          </ul>
+
+          <div class="work-status" id="volStatus" hidden></div>
+
+          <form id="volForm" novalidate>
+            <div class="form-grid">
+              <div class="field full">
+                <label data-i18n="work.volJobs">What would you like to do?</label>
+                <div class="check-row">
+                  <label class="checkbox"><input type="checkbox" name="jobs" value="door" /><span data-i18n="work.jobDoor">Door, scanning people in</span></label>
+                  <label class="checkbox"><input type="checkbox" name="jobs" value="bar" /><span data-i18n="work.jobBar">Bar</span></label>
+                  <label class="checkbox"><input type="checkbox" name="jobs" value="build" /><span data-i18n="work.jobBuild">Building and striking the rig</span></label>
+                  <label class="checkbox"><input type="checkbox" name="jobs" value="media" /><span data-i18n="work.jobMedia">Photo and video</span></label>
+                  <label class="checkbox"><input type="checkbox" name="jobs" value="social" /><span data-i18n="work.jobSocial">Social media and design</span></label>
+                  <label class="checkbox"><input type="checkbox" name="jobs" value="any" /><span data-i18n="work.jobAny">Anything, put me where you need me</span></label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="volHow" data-i18n="work.volHow">How often could you work?</label>
+                <select id="volHow" name="frequency">
+                  <option value="every" data-i18n="work.freqEvery">Every event</option>
+                  <option value="most" data-i18n="work.freqMost">Most events</option>
+                  <option value="some" data-i18n="work.freqSome">A few a year</option>
+                  <option value="once" data-i18n="work.freqOnce">I want to try one and see</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="volTime" data-i18n="work.volTime">Preferred time</label>
+                <select id="volTime" name="time">
+                  <option value="any" data-i18n="work.timeAny">Any time</option>
+                  <option value="build" data-i18n="work.timeBuild">Before doors, building the rig</option>
+                  <option value="early" data-i18n="work.timeEarly">Early, from doors</option>
+                  <option value="late" data-i18n="work.timeLate">Late, until close</option>
+                  <option value="strike" data-i18n="work.timeStrike">After close, packing down</option>
+                </select>
+              </div>
+
+              <div class="field full">
+                <label for="volExp" data-i18n="work.volExp">Have you done anything like this before?</label>
+                <textarea id="volExp" name="experience" rows="3" placeholder="Bar work, festivals, sound, security, nothing at all. All fine." data-i18n-attr="placeholder:work.volExpPh"></textarea>
+              </div>
+
+              <div class="field full">
+                <label for="volTraining" data-i18n="work.volTraining">Any relevant training or certificates?</label>
+                <input id="volTraining" name="training" placeholder="STAD, first aid, driving license, none." data-i18n-attr="placeholder:work.volTrainingPh" />
+              </div>
+
+              <div class="field full">
+                <label for="volNote" data-i18n="work.volNote">Anything we should know?</label>
+                <textarea id="volNote" name="note" rows="2" placeholder="Optional." data-i18n-attr="placeholder:work.optional"></textarea>
+              </div>
+
+              <label class="checkbox">
+                <input type="checkbox" id="volOk" name="agree" />
+                <span data-i18n="work.volAgree">I understand this is unpaid volunteering for a non-profit, that shifts are agreed in advance, and that turning up matters more than anything else on this form.</span>
+              </label>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-sm" data-i18n="work.volSubmit">Apply to volunteer</button>
+                <span class="form-msg" id="volMsg" role="status"></span>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- ---------- CREATOR / PROMOTER ---------- -->
+        <div class="form-shell acc-panel work-card" id="creCard" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="work.creTitle">Bring people, get paid for it</h3>
+            <p data-i18n="work.creLead">If you make content or you know a room full of the right people, we will give you your own code. You can see exactly what it does, and you get paid on the people who actually turn up.</p>
+          </div>
+
+          <ul class="work-perks">
+            <li><span class="acc-dot"></span><span data-i18n="work.crePerk1">Your own code, on your own page, with real numbers behind it.</span></li>
+            <li><span class="acc-dot"></span><span data-i18n="work.crePerk2">Paid per person who signs up with your code and comes to a night. Not per click, not per follower.</span></li>
+            <li><span class="acc-dot"></span><span data-i18n="work.crePerk3">Guest list for you, and access to shoot at our events.</span></li>
+          </ul>
+
+          <div class="work-status" id="creStatus" hidden></div>
+
+          <form id="creForm" novalidate>
+            <div class="form-grid">
+              <div class="field">
+                <label for="creKind" data-i18n="work.creKind">Which are you?</label>
+                <select id="creKind" name="kind">
+                  <option value="creator" data-i18n="work.kindCreator">Creator, I make content</option>
+                  <option value="promoter" data-i18n="work.kindPromoter">Promoter, I bring people</option>
+                  <option value="both" data-i18n="work.kindBoth">Both</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="creWanted" data-i18n="work.creWanted">Code you would like</label>
+                <input id="creWanted" name="wanted_code" placeholder="Letters and numbers, e.g. NOVA" maxlength="16" autocapitalize="characters" data-i18n-attr="placeholder:work.creWantedPh" />
+                <small class="acc-hint" data-i18n="work.creWantedHint">We will use this if it is free. Nothing is decided until we say yes.</small>
+              </div>
+
+              <div class="field full">
+                <label data-i18n="work.creChannels">Your channels</label>
+                <small class="acc-hint" style="margin-bottom:10px;display:block;" data-i18n="work.creChannelsHint">Fill in the ones you actually use. Handle and roughly how many followers.</small>
+              </div>
+
+              <div class="field"><label for="creIg">Instagram</label><input id="creIg" name="instagram" placeholder="@handle" /></div>
+              <div class="field"><label for="creIgN" data-i18n="work.followers">Followers</label><input id="creIgN" name="instagram_n" type="number" min="0" inputmode="numeric" /></div>
+              <div class="field"><label for="creTt">TikTok</label><input id="creTt" name="tiktok" placeholder="@handle" /></div>
+              <div class="field"><label for="creTtN" data-i18n="work.followers">Followers</label><input id="creTtN" name="tiktok_n" type="number" min="0" inputmode="numeric" /></div>
+              <div class="field"><label for="creYt">YouTube</label><input id="creYt" name="youtube" placeholder="@handle or link" /></div>
+              <div class="field"><label for="creYtN" data-i18n="work.followers">Subscribers</label><input id="creYtN" name="youtube_n" type="number" min="0" inputmode="numeric" /></div>
+              <div class="field full"><label for="creOther" data-i18n="work.creOther">Anywhere else</label><input id="creOther" name="other" placeholder="SoundCloud, Spotify, a newsletter, a group chat." data-i18n-attr="placeholder:work.creOtherPh" /></div>
+
+              <div class="field full">
+                <label for="creAudience" data-i18n="work.creAudience">Who is your audience, and where are they?</label>
+                <textarea id="creAudience" name="audience" rows="2" placeholder="Age, city, what they are into. Stockholm matters most to us." data-i18n-attr="placeholder:work.creAudiencePh"></textarea>
+              </div>
+
+              <div class="field full">
+                <label for="crePlan" data-i18n="work.crePlan">What would you actually do?</label>
+                <textarea id="crePlan" name="plan" rows="3" placeholder="Post before each event, film the night, bring twenty people, run a group. Be honest, we would rather have small and real." data-i18n-attr="placeholder:work.crePlanPh"></textarea>
+              </div>
+
+              <label class="checkbox">
+                <input type="checkbox" id="creOk" name="agree" />
+                <span data-i18n="work.creAgree">I understand rewards are paid on people who sign up with my code and actually attend, that the rate is agreed with us in writing, and that nothing is owed until a night has happened.</span>
+              </label>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-sm" data-i18n="work.creSubmit">Apply for a code</button>
+                <span class="form-msg" id="creMsg" role="status"></span>
+              </div>
+            </div>
+          </form>
+
+          <p class="acc-hint" style="margin-top:20px;" data-i18n="work.noBank">We never ask for bank details on this site and we never store them. When there is something to pay, we arrange it with you by email.</p>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-bottom">
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" />
+      <span class="copy">© 2024–2026 Slutstation · Underground House Music · Stockholm</span>
+      <div class="socials">
+        <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
+        <a href="https://www.tiktok.com/@slutstationsthlm" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
+        <a href="mailto:info@slutstation.se" aria-label="Email">✉</a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="/src/work.js"></script>
+</body>
+</html>

@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin · Slutstation</title>
+  <meta name="theme-color" content="#0a0b0f" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
+  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
+  <!-- Device tier, decided before the stylesheet so the first paint is already
+       the affordable one. Full rationale in index.html. -->
+  <script>
+    (function () {
+      var el = document.documentElement, n = navigator, c = n.connection || {};
+      var mem = n.deviceMemory || 0, cores = n.hardwareConcurrency || 0;
+      var tier = matchMedia("(pointer: coarse)").matches ? "mid" : "high";
+      if (mem && mem <= 4) tier = "low";
+      else if (mem && mem <= 6 && cores && cores <= 4) tier = "low";
+      if (c.saveData === true || /(^|-)(2g|slow-2g)$/.test(c.effectiveType || "")) tier = "low";
+      if (matchMedia("(prefers-reduced-transparency: reduce)").matches) tier = "low";
+      el.dataset.tier = tier;
+    })();
+  </script>
+  <link rel="stylesheet" crossorigin href="/styles.css">
+  <link rel="stylesheet" crossorigin href="/account.css">
+</head>
+<body class="no-announce inner">
+  <div class="hero-bg acc-bg" id="heroBg" aria-hidden="true">
+    <div class="hero-bg-blur"></div>
+    <div class="hero-bg-tint"></div>
+  </div>
+
+  <header class="nav scrolled" id="nav">
+    <a href="/account.html" class="nav-logo">
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" />
+    </a>
+    <nav class="nav-links">
+      <a href="/account.html">My account</a>
+      <a href="/staff.html">Staff</a>
+    </nav>
+    <div class="nav-cta">
+      <button class="btn btn-ghost btn-sm" id="signoutBtn">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page ops-page">
+    <div class="wrap">
+
+      <section id="stateLoading">
+        <div class="form-shell acc-narrow acc-loading">
+          <span class="acc-spinner" aria-hidden="true"></span><p>Checking access…</p>
+        </div>
+      </section>
+
+      <section id="stateDenied" hidden>
+        <div class="form-shell acc-narrow" style="text-align:center;">
+          <h3 style="font-weight:600;font-size:1.2rem;">Admins only</h3>
+          <p style="color:var(--muted);margin-top:8px;">
+            This account isn't an admin. Admins can't promote themselves, ask an existing admin.
+          </p>
+          <p style="margin-top:18px;"><a href="/account.html" class="btn btn-primary btn-sm">Back to my account</a></p>
+        </div>
+      </section>
+
+      <section id="stateAdmin" hidden>
+        <!-- Only rendered when an event is actually today. On every other day
+             the panel opens where it always did. -->
+        <a class="tonight-strip" id="tonightStrip" hidden href="#"></a>
+
+        <div class="ops-bar">
+          <div>
+            <h2>Admin</h2>
+            <p class="ops-shift">Everything about members, events and who's working them.</p>
+          </div>
+          <div class="tabs acc-tabs admin-tabs">
+            <button class="tab active" data-panel="overview">Overview</button>
+            <button class="tab" data-panel="users">Members</button>
+            <button class="tab" data-panel="crew">Crew</button>
+            <button class="tab" data-panel="apply">Applications<span class="tab-badge" id="applyBadge" hidden></span></button>
+            <button class="tab" data-panel="events">Events</button>
+            <button class="tab" data-panel="tickets">Tickets</button>
+          </div>
+        </div>
+
+        <!-- ============ OVERVIEW ============ -->
+        <div class="admin-panel" id="panel-overview">
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head"><h3>Accounts</h3></div>
+            <div class="kpi-grid" id="kpiAccounts"></div>
+          </div>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head"><h3>Attendance</h3></div>
+            <div class="kpi-grid" id="kpiEvents"></div>
+          </div>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Ticket money</h3>
+              <p>Money taken for events that haven't happened yet isn't yours. If you cancel, all of it goes back, Swedish law gives no force-majeure exception, whatever the terms say. Treat the first figure as somebody else's money you are holding.</p>
+            </div>
+            <div class="kpi-grid" id="kpiFloat"></div>
+            <div class="ops-list" id="floatByEvent"></div>
+          </div>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Tier spread</h3>
+              <p>Where your members sit right now, over the trailing 24 months.</p>
+            </div>
+            <div class="ops-list" id="tierSpread"></div>
+          </div>
+        </div>
+
+        <!-- ============ MEMBERS ============ -->
+        <div class="admin-panel" id="panel-users" hidden>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Members</h3>
+              <p>Search by name or email. Click anyone to see their full history.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="userSearch">Search</label>
+                <input id="userSearch" placeholder="Name or email…" autocomplete="off" />
+              </div>
+            </div>
+            <div class="ops-list" id="userList"></div>
+            <div class="form-actions">
+              <button class="btn btn-ghost btn-sm" id="userMore">Load more</button>
+              <button class="btn btn-ghost btn-sm" id="userExport">Export what is loaded as CSV</button>
+              <span class="form-msg" id="userMsg"></span>
+            </div>
+          </div>
+
+          <div class="form-shell acc-panel" id="userDetail" hidden>
+            <div class="acc-card-head">
+              <h3 id="detailName">, </h3>
+              <p id="detailMeta"></p>
+            </div>
+            <div class="kpi-grid" id="detailStats"></div>
+
+            <div class="acc-card-head" style="margin-top:28px;"><h3>Account tag</h3></div>
+            <div class="ops-actions" id="detailRole"></div>
+
+            <div class="acc-card-head" style="margin-top:28px;">
+              <h3>Give a tag for an event</h3>
+              <p>Door and bar open 4h before doors and close 6h after the event ends.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field"><label for="assignEvent">Event</label><select id="assignEvent"></select></div>
+              <div class="field"><label for="assignRole">Tag</label>
+                <select id="assignRole"><option value="door">Door</option><option value="bar">Bar</option></select>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="assignBtn">Give tag</button>
+                <span class="form-msg" id="assignMsg"></span>
+              </div>
+            </div>
+
+            <div class="acc-card-head" style="margin-top:28px;"><h3>Shifts</h3></div>
+            <div class="ops-list" id="detailShifts"></div>
+
+            <div class="acc-card-head" style="margin-top:28px;"><h3>Events attended</h3></div>
+            <div class="ops-list" id="detailAttendance"></div>
+
+            <div class="acc-card-head" style="margin-top:28px;">
+              <h3>History</h3>
+              <p>Everything that happened to this account and when. Current state answers "what"; this answers "how did they get here", which is what every support question is really asking.</p>
+            </div>
+            <div class="timeline" id="detailTimeline"></div>
+          </div>
+        </div>
+
+        <!-- ============ CREW ============
+             Door and bar tags are per event and expire on their own, which is
+             the right model and left one blind spot: nowhere to see the people.
+             This is that view. Cover for what is coming, then everyone who
+             works here, then one person's whole history. -->
+        <div class="admin-panel" id="panel-crew" hidden>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Cover</h3>
+              <p>Who is on for what is coming. An event with nobody on the door is flagged, because that is the one you want to find out about before the night rather than during it.</p>
+            </div>
+            <div class="ops-list" id="crewCover"></div>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Put someone on a shift</h3>
+              <p>Anyone with an account can be given a tag. It starts working 4 hours before doors and stops 6 hours after the event ends, so there is nothing to remember to take away.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="crewFind">Who</label>
+                <input id="crewFind" placeholder="Search every account by name or email…" autocomplete="off" />
+                <div class="ops-list" id="crewFindList"></div>
+              </div>
+              <div class="field"><label for="crewEvent">Event</label><select id="crewEvent"></select></div>
+              <div class="field"><label for="crewRole">Tag</label>
+                <select id="crewRole"><option value="door">Door</option><option value="bar">Bar</option></select>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="crewAssign" disabled>Give tag</button>
+                <span class="form-msg" id="crewAssignMsg"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Everyone who works here</h3>
+              <p>Anyone who has ever had a tag, plus every admin. Whoever is on shift right now comes first, then whoever is on next.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="crewSearch">Search</label>
+                <input id="crewSearch" placeholder="Name or email…" autocomplete="off" />
+              </div>
+            </div>
+            <div class="ops-list" id="crewList"></div>
+            <span class="form-msg" id="crewMsg"></span>
+          </div>
+
+          <div class="form-shell acc-panel" id="crewDetail" hidden>
+            <div class="acc-card-head">
+              <h3 id="crewName"></h3>
+              <p id="crewMeta"></p>
+            </div>
+            <div class="kpi-grid" id="crewStats"></div>
+            <div class="acc-card-head" style="margin-top:28px;"><h3>Shifts</h3></div>
+            <div class="ops-list" id="crewShifts"></div>
+          </div>
+        </div>
+
+        <!-- ============ APPLICATIONS ============
+             Volunteers and creators, in one queue. Approving is the whole
+             role: there is no role column for these, an approved row IS the
+             permission, so undoing it is one click back to rejected. -->
+        <div class="admin-panel" id="panel-apply" hidden>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Applications</h3>
+              <p>People who want to work a night or bring people. Approving a volunteer lets them see their shifts; approving a creator lets you give them a code below.</p>
+            </div>
+            <div class="tabs acc-tabs admin-tabs" style="margin-bottom:20px;">
+              <button class="tab active" data-appstatus="pending">Waiting</button>
+              <button class="tab" data-appstatus="approved">Approved</button>
+              <button class="tab" data-appstatus="rejected">Turned down</button>
+              <button class="tab" data-appstatus="all">Everyone</button>
+            </div>
+            <div class="ops-list" id="applyList"></div>
+            <span class="form-msg" id="applyMsg"></span>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Codes</h3>
+              <p>What each code has actually done. "Turned up" is the number that costs money: somebody signing up with a code earns nothing until they come to a night.</p>
+            </div>
+            <div class="ops-list" id="codeList"></div>
+            <div class="form-actions">
+              <button class="btn btn-ghost btn-sm" id="codeExport">Export as CSV</button>
+              <span class="form-msg" id="codeMsg"></span>
+            </div>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>What we have done</h3>
+              <p>Every admin decision, newest first. member_events records what happened to a member; this records what one of us did.</p>
+            </div>
+            <div class="timeline" id="auditList"></div>
+          </div>
+        </div>
+
+        <!-- ============ EVENTS ============ -->
+        <div class="admin-panel" id="panel-events" hidden>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>New event</h3>
+              <p>Events are what door tags attach to, create one before assigning staff.</p>
+            </div>
+            <form id="eventForm">
+              <div class="form-grid">
+                <div class="field"><label for="f-admin-name-3">Name <span class="req">*</span></label><input id="f-admin-name-3" name="name" required /></div>
+                <div class="field"><label for="f-admin-venue-4">Venue</label><input id="f-admin-venue-4" name="venue" /></div>
+                <div class="field"><label for="f-admin-starts_at-5">Doors <span class="req">*</span></label><input id="f-admin-starts_at-5" name="starts_at" type="datetime-local" required /></div>
+                <div class="field"><label for="f-admin-ends_at-6">Ends</label><input id="f-admin-ends_at-6" name="ends_at" type="datetime-local" /></div>
+                <div class="field"><label for="f-admin-capacity-7">Capacity</label><input id="f-admin-capacity-7" name="capacity" type="number" min="1" /></div>
+                <div class="field"><label for="f-admin-billetto_event_id-8">Billetto event id</label><input id="f-admin-billetto_event_id-8" name="billetto_event_id" placeholder="Optional" /></div>
+                <div class="field full"><label for="f-admin-image_url-9">Image</label><input id="f-admin-image_url-9" name="image_url" placeholder="assets/festival-crowd.jpg" />
+                  <small class="acc-hint">Shown on the front page. A file in assets/, or a full URL. Leave blank for the default.</small></div>
+                <div class="field full"><label for="f-admin-description-10">Short description</label><input id="f-admin-description-10" name="description" placeholder="One line for the event card." /></div>
+                <div class="field full"><label for="f-admin-info-23">Practical info</label>
+                  <textarea id="f-admin-info-23" name="info" rows="3" placeholder="How to get there, when to arrive, what happens if it rains, whether there's wardrobe."></textarea>
+                  <small class="acc-hint">Shown to anyone holding a ticket and to whoever is working it. Every line here is one fewer Instagram DM.</small>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm">Create event</button>
+                  <span class="form-msg" id="eventMsg"></span>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head"><h3>All events</h3><p>Click one to see its roster.</p></div>
+            <div class="ops-list" id="eventList"></div>
+          </div>
+
+          <div class="form-shell acc-panel" id="eventDetail" hidden>
+            <div class="acc-card-head"><h3 id="evName">, </h3><p id="evMeta"></p></div>
+            <div class="kpi-grid" id="evKpis"></div>
+          <div class="form-shell acc-panel" id="evAnnounce" style="margin-top:18px;"></div>
+            <div class="acc-card-head" style="margin-top:28px;"><h3>Working this event</h3></div>
+            <div class="ops-list" id="evStaff"></div>
+
+            <div class="acc-card-head" style="margin-top:32px;">
+              <h3>Import attendance from a spreadsheet</h3>
+              <p>For events sold through Billetto, where nobody scanned a code at the door. Drop in Billetto's attendee export and we'll match it to accounts by email address, so everyone's tier moves as if they'd been scanned.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="importFile">Attendee export (.csv, .tsv or .xlsx)</label>
+                <input type="file" id="importFile" accept=".csv,.tsv,.txt,.xlsx,.xls" />
+                <small class="acc-hint">The file is read in your browser and never uploaded anywhere. Only the email column is used, we ignore names, phone numbers and everything else in the export.</small>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-ghost btn-sm" id="importDry" disabled>Check the file first</button>
+                <button class="btn btn-primary btn-sm" id="importBtn" disabled>Import attendance</button>
+                <button type="button" class="acc-link" id="importUndo">Undo this import</button>
+                <span class="form-msg" id="importMsg"></span>
+              </div>
+            </div>
+            <div id="importResult"></div>
+          </div>
+        </div>
+
+        <!-- ============ TICKETS ============ -->
+        <div class="admin-panel" id="panel-tickets" hidden>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Ticket sales</h3>
+              <p>Releases open in order: when one sells out the next opens by itself. You can also open, pause or close any of them by hand at any moment.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full"><label for="tkEvent">Event</label><select id="tkEvent"></select></div>
+            </div>
+            <div class="kpi-grid" id="tkKpis" style="margin-top:8px;"></div>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Releases</h3>
+              <p>Prices are per ticket, in kronor. An empty allocation means unlimited.</p>
+            </div>
+            <div class="ops-list" id="tkTypes"></div>
+            <div class="form-actions" style="margin-top:16px;">
+              <button class="btn btn-ghost btn-sm" id="tkSeed">Set up the four releases + backstage</button>
+              <button class="btn btn-ghost btn-sm" id="tkNew">Add a release</button>
+              <span class="form-msg" id="tkMsg"></span>
+            </div>
+          </div>
+
+          <div class="form-shell acc-panel" id="tkEditPanel" hidden>
+            <div class="acc-card-head"><h3 id="tkEditTitle">Edit release</h3></div>
+            <form id="tkForm">
+              <div class="form-grid">
+                <div class="field"><label for="f-admin-name-13">Name <span class="req">*</span></label><input id="f-admin-name-13" name="name" required /></div>
+                <div class="field"><label for="f-admin-kind-14">Kind</label>
+                  <select id="f-admin-kind-14" name="kind"><option value="entry">Entry</option><option value="addon">Add-on</option></select>
+                </div>
+                <div class="field"><label for="f-admin-price-15">Price (kr) <span class="req">*</span></label><input id="f-admin-price-15" name="price" type="number" min="0" step="1" required /></div>
+                <div class="field"><label for="f-admin-quantity-16">How many (blank = unlimited)</label><input id="f-admin-quantity-16" name="quantity" type="number" min="1" /></div>
+                <div class="field"><label for="f-admin-release_order-17">Order in the ladder</label><input id="f-admin-release_order-17" name="release_order" type="number" min="1" max="99" value="1" /></div>
+                <div class="field"><label for="f-admin-max_per_order-18">Max per person</label><input id="f-admin-max_per_order-18" name="max_per_order" type="number" min="1" max="20" value="4" /></div>
+                <div class="field"><label for="f-admin-status-19">Status</label>
+                  <select id="f-admin-status-19" name="status">
+                    <option value="draft">Draft, hidden</option>
+                    <option value="on_sale">On sale</option>
+                    <option value="paused">Paused, visible, not buyable</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </div>
+                <div class="field"><label for="f-admin-sales_start-20">Opens (optional)</label><input id="f-admin-sales_start-20" name="sales_start" type="datetime-local" /></div>
+                <div class="field"><label for="f-admin-sales_end-21">Closes (optional)</label><input id="f-admin-sales_end-21" name="sales_end" type="datetime-local" /></div>
+                <div class="field full"><label for="f-admin-description-22">Note shown to buyers</label><input id="f-admin-description-22" name="description" /></div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm">Save release</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="tkCancel">Cancel</button>
+                  <button type="button" class="acc-link" id="tkDelete" hidden>Delete</button>
+                  <span class="form-msg" id="tkFormMsg"></span>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Orders</h3>
+              <p>Newest first. Anything needing a look is flagged.</p>
+            </div>
+            <div class="ops-list" id="tkOrders"></div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

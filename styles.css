@@ -1,0 +1,1794 @@
+/* =========================================================
+   SLUTSTATION — 2026 · Liquid Glass (light / neutral)
+   System fonts for speed + authentic iOS/macOS feel.
+   Frosted translucent surfaces, hairline borders, squarer corners.
+   ========================================================= */
+
+:root {
+  /* neutral light palette */
+  --bg:        #f5f5f7;   /* apple system gray */
+  --bg-2:      #ffffff;
+  --ink:       #1d1d1f;   /* near-black text */
+  --muted:     #6e6e73;
+  --faint:     #a1a1a6;
+  --line:      rgba(0, 0, 0, 0.10);
+  --line-2:    rgba(0, 0, 0, 0.16);
+
+  /* glass */
+  --glass:        rgba(255, 255, 255, 0.42);
+  --glass-strong: rgba(255, 255, 255, 0.6);
+  --glass-hi:     inset 0 1px 1px rgba(255, 255, 255, 0.9), inset 0 -8px 18px rgba(255, 255, 255, 0.18);
+  --blur:         saturate(160%) blur(22px);
+
+  /* accent — restrained, used only for small text bits */
+  --accent:      #3f6fd6;
+  --accent-soft: #4a7ae0;
+  --accent-glow: rgba(63, 111, 214, 0.28);
+
+  --shadow:    0 8px 30px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 18px 50px -12px rgba(0, 0, 0, 0.16);
+
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+          "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* squarer corners */
+  --r-lg: 18px;
+  --r-md: 12px;
+  --r-sm: 10px;
+  --r-xs: 8px;
+
+  --maxw: 1180px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --announce-h: 42px;
+}
+
+/* ---------- reset ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Every in-page link (Events, About, Membership, Info, Contact) landed with
+     the section's heading tucked under the fixed nav and announcement bar, so
+     you arrived already having missed the title. Reserving that height means
+     an anchor lands where a person expects it to. */
+  scroll-padding-top: calc(var(--announce-h) + 84px);
+}
+/* Smooth scrolling is a preference, not a default. Animating a jump down a
+   page this long means compositing every glass surface it passes on the way,
+   which on a slow phone turns a single tap into a second of stutter. Anyone
+   who has asked for less motion gets the instant jump. */
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+body.no-announce { scroll-padding-top: 84px; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: -0.01em;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  /* text-rendering: optimizeLegibility used to be here. On a page this long it
+     forces the engine to load and apply the full kerning and ligature tables
+     for every run of text before it can paint any of it, which is measurable
+     delay on a slow device in exchange for kerning nobody has ever noticed in
+     a UI font. The default is optimizeSpeed for exactly this reason. */
+}
+/* The [hidden] attribute must always win. The UA's [hidden]{display:none} loses
+   to any author display property at equal specificity, so .empty-state with
+   display:flex stayed visible after JS set hidden=true and the front page
+   showed "No events scheduled yet" UNDER the event it had just drawn. */
+[hidden] { display: none !important; }
+a { color: inherit; text-decoration: none; }
+/* width/height attributes on an <img> are two things at once: the aspect ratio
+   the browser reserves space with before the file arrives, and a presentational
+   size hint. We want the first and not the second — without these two lines a
+   gallery photo carrying height="1600" renders 1600px tall inside a 384px
+   column. Any rule that sets a real width or height still wins on specificity. */
+img { display: block; max-width: 100%; width: auto; height: auto; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+ul { list-style: none; }
+::selection { background: var(--accent); color: #fff; }
+
+/* ---------- ambient light blobs (give glass something to refract) ---------- */
+.grain { display: none; }
+.aura { display: none; }
+
+/* ---------- layout ---------- */
+.wrap { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 26px; position: relative; z-index: 1; }
+.eyebrow {
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em;
+  font-size: 0.74rem; color: var(--accent); display: inline-flex; align-items: center; gap: 10px;
+}
+.eyebrow::before { content: ""; width: 22px; height: 1.5px; background: var(--accent); border-radius: 2px; }
+/* padding-BLOCK, not the `padding: X 0` shorthand this used to be.
+   Five sections on the front page carry both classes (`class="section-pad wrap"`
+   — events, apply, work, gallery, info). The shorthand sets all four sides, so
+   the `0` was overwriting .wrap's padding-inline, and since both rules are one
+   class deep the later one simply won.
+
+   It hid in the one place nobody resizes to. Under 560px a media query further
+   down re-sets .wrap's padding-inline to 18px and rescues it; over 1180px the
+   max-width leaves a margin anyway. Between the two — a tablet, a half-screen
+   window, a small laptop — those five sections ran their headings flush into
+   both edges of the screen while the sections either side of them, which nest
+   a .wrap in a plain .section-pad, stayed correctly inset. Measured at 820px
+   wide: the Gallery and Info headings started at x=0, About at x=26. */
+.section-pad { padding-block: clamp(72px, 11vw, 150px); }
+.section-head { max-width: 720px; margin-bottom: 56px; }
+.section-head h2 {
+  font-weight: 600; font-size: clamp(2rem, 5.5vw, 3.6rem); line-height: 1.05;
+  letter-spacing: -0.03em; margin-top: 18px;
+}
+.section-head p { color: var(--muted); margin-top: 16px; font-size: 1.12rem; max-width: 58ch; line-height: 1.5; }
+.lead-serif { font-style: italic; color: var(--ink); font-weight: 500; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 600; font-size: 1rem; letter-spacing: -0.01em;
+  padding: 13px 26px; border-radius: var(--r-sm); position: relative;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: var(--glass-hi), 0 8px 22px -12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s var(--ease), background 0.3s, box-shadow 0.3s;
+}
+.btn:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.55); box-shadow: var(--glass-hi), 0 14px 30px -12px rgba(0, 0, 0, 0.26); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: rgba(255, 255, 255, 0.55); }
+.btn-primary:hover { background: rgba(255, 255, 255, 0.68); }
+.btn-ghost { background: rgba(255, 255, 255, 0.3); }
+.btn-sm { padding: 10px 18px; font-size: 0.9rem; }
+
+/* ---------- announcement bar ---------- */
+.announce {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1100;
+  height: var(--announce-h); display: flex; align-items: center; justify-content: center;
+  background: #0a0a0a; color: #fff; padding: 0 46px;
+}
+.announce p { font-size: 0.82rem; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.announce a { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.announce a:hover { opacity: 0.75; }
+.announce .x {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%;
+  color: #fff; font-size: 1.2rem; line-height: 1; opacity: 0.65; transition: 0.2s;
+}
+.announce .x:hover { opacity: 1; background: rgba(255, 255, 255, 0.14); }
+body.no-announce .announce { display: none; }
+body.no-announce .nav { top: 0; }
+
+/* ---------- nav ---------- */
+.nav {
+  position: fixed; top: var(--announce-h); left: 0; right: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 26px; transition: background 0.4s, box-shadow 0.4s, border-color 0.4s, padding 0.4s;
+  border-bottom: 1px solid transparent;
+}
+.nav.scrolled {
+  background: rgba(245, 245, 247, 0.7);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border-bottom-color: var(--line); padding-block: 11px;
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+/* default = over the dark hero video: keep the white wordmark white */
+.nav-logo img { height: 22px; width: auto; filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); transition: filter 0.4s; }
+.nav.scrolled .nav-logo img { filter: invert(1) brightness(0.18); } /* white wordmark -> dark on light */
+.nav-links { display: flex; align-items: center; gap: 2px; }
+.nav-links a {
+  font-size: 0.94rem; font-weight: 400; color: rgba(255,255,255,0.82);
+  padding: 8px 14px; border-radius: var(--r-xs); transition: color 0.2s, background 0.2s;
+}
+.nav-links a:hover { color: #fff; background: rgba(255, 255, 255, 0.12); }
+.nav.scrolled .nav-links a { color: var(--muted); }
+.nav.scrolled .nav-links a:hover { color: var(--ink); background: rgba(0, 0, 0, 0.04); }
+/* hero CTA in nav: white outline over video, glass when scrolled */
+.nav .nav-cta .btn { color: #fff; background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.3); box-shadow: inset 0 1px 1px rgba(255,255,255,0.3); }
+.nav .nav-cta .btn:hover { background: rgba(255,255,255,0.26); }
+.nav.scrolled .nav-cta .btn { color: var(--ink); background: rgba(255,255,255,0.55); border-color: rgba(255,255,255,0.6); box-shadow: var(--glass-hi), 0 8px 22px -12px rgba(0,0,0,0.2); }
+.nav-toggle span { transition: background 0.4s; }
+.nav.scrolled .nav-toggle span { background: var(--ink); }
+.nav-cta { display: flex; align-items: center; gap: 12px; }
+.nav-toggle { display: none; width: 40px; height: 40px; border-radius: var(--r-xs); border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.12); }
+.nav.scrolled .nav-toggle { border-color: var(--line); background: var(--glass); }
+.nav-toggle span { display: block; width: 16px; height: 1.5px; background: #fff; margin: 4px auto; transition: 0.3s; }
+
+/* ---------- fixed hero background ----------
+
+   THE ONE CHANGE THAT MATTERS ON THIS PAGE
+
+   This used to be `filter: blur(calc(var(--hb) * 22px))` on the video itself,
+   with --hb driven by scroll. Every value of --hb is a different filter, so
+   every scroll frame threw away the rasterised layer and blurred 1920x1080
+   again — and because the video is playing, it kept doing that at 25fps even
+   when you stopped scrolling. On top of that sit forty backdrop-filter
+   surfaces, each of which has to re-sample that constantly-changing backdrop.
+   That is the lag, and no amount of tuning the glass fixes it while it stands.
+
+   Now: the video is never filtered. A separate layer holds a pre-blurred
+   still and fades in over it by opacity. Opacity is a compositor property —
+   the GPU blends two already-rasterised layers and nothing repaints. Once
+   you're past the hero the backdrop is a static image, so the glass surfaces
+   above it can cache their blurs instead of rebuilding them every frame.
+   --------------------------------------------------------------------- */
+.hero-bg {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  background: #07080c; /* fallback before/under video */
+  /* --hb is driven by JS: 0 at top -> 1 once hero is scrolled past */
+  --hb: 0;
+}
+.hero-bg-video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  /* Saturation is a static filter: rasterised once per video frame by the
+     same pass that decodes it, not re-derived per scroll position. */
+  filter: saturate(1.15);
+  transform: translateZ(0);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+/* The blurred twin. A 320px-wide still, blown up and blurred — at this radius
+   it is pixel-for-pixel what blurring the full-size frame produced, for 3KB
+   and one rasterisation that then never changes. The slight scale hides the
+   soft transparent edge blur() leaves around its own element box. */
+.hero-bg-blur {
+  position: absolute; inset: 0;
+  background: url("assets/hero-blur.jpg") center / cover no-repeat;
+  filter: blur(18px) saturate(1.15) brightness(0.82);
+  transform: scale(1.08) translateZ(0);
+  opacity: var(--hb);
+  will-change: opacity;
+}
+.hero-bg-tint {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 32%, rgba(0,0,0,0.12), rgba(0,0,0,0.5) 78%),
+    linear-gradient(180deg, rgba(6,7,11,0.5) 0%, rgba(6,7,11,0.28) 34%, rgba(6,7,11,0.5) 100%);
+}
+/* extra darkening that fades in as you scroll, so content reads over the blur
+   — kept moderate so the blurred video frame stays visible (not black) */
+.hero-bg::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: #06070b; opacity: calc(var(--hb) * 0.38);
+}
+
+/* page body floats OVER the fixed blurred video (no opaque fill) */
+.page { position: relative; z-index: 1; background: transparent; }
+
+/* ---------- hero ---------- */
+.hero {
+  position: relative; z-index: 1; min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 120px 26px 80px; color: #fff;
+}
+.hero-inner { display: flex; flex-direction: column; align-items: center; max-width: 760px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 0.82rem; color: rgba(255,255,255,0.92); font-weight: 500;
+  background: rgba(255,255,255,0.12); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid rgba(255,255,255,0.22); padding: 8px 16px; border-radius: 100px;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.25); margin-bottom: 38px;
+}
+.hero-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.9); animation: pulse 2.2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+.hero-logo { line-height: 0; margin-bottom: 30px; }
+.hero-logo img {
+  width: min(78vw, 620px); height: auto; margin-inline: auto;
+  filter: drop-shadow(0 8px 40px rgba(0,0,0,0.45));
+}
+.hero-tagline { max-width: 46ch; color: rgba(255,255,255,0.82); font-size: 1.18rem; line-height: 1.5; }
+.hero-tagline b { color: #fff; font-weight: 600; }
+.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 34px; }
+.scroll-cue {
+  position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.7); font-size: 0.78rem;
+}
+.scroll-cue .line { width: 46px; height: 1.5px; background: rgba(255,255,255,0.4); border-radius: 2px; position: relative; overflow: hidden; }
+.scroll-cue .line::after { content:""; position:absolute; inset:0; width:40%; background: #fff; animation: slide 2.4s var(--ease) infinite; }
+@keyframes slide { 0%{transform:translateX(-110%)} 100%{transform:translateX(320%)} }
+
+/* glass buttons read on dark video in the hero */
+.hero .btn { color: #fff; background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.28); box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 8px 22px -12px rgba(0,0,0,0.5); }
+.hero .btn:hover { background: rgba(255,255,255,0.24); }
+.hero .btn-primary { background: #fff; color: #0a0b0f; border-color: #fff; }
+.hero .btn-primary:hover { background: rgba(255,255,255,0.88); }
+
+/* ---------- marquee ---------- */
+.marquee { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 18px 0; overflow: hidden; white-space: nowrap; background: var(--bg-2); }
+.marquee-track { display: inline-flex; gap: 56px; animation: marquee 30s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+.marquee span { text-transform: uppercase; letter-spacing: 0.04em; font-size: 1.15rem; font-weight: 600; color: var(--faint); display: inline-flex; align-items: center; gap: 56px; }
+.marquee span::after { content: "✺"; color: var(--accent); font-size: 0.85rem; }
+@keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* ---------- glass card base ---------- */
+.glass {
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line); box-shadow: var(--glass-hi), var(--shadow);
+}
+
+/* ---------- events ---------- */
+.tabs { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 100px; margin-bottom: 32px; background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-hi); }
+.tab { font-size: 0.9rem; font-weight: 500; padding: 9px 20px; border-radius: 100px; color: var(--muted); transition: 0.25s; }
+.tab.active { background: var(--ink); color: #fff; }
+
+/* upcoming = empty / to-be-announced state */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: clamp(48px, 8vw, 96px) 28px; border-radius: var(--r-lg);
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line); box-shadow: var(--glass-hi), var(--shadow);
+}
+.empty-state .pin { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: rgba(0,113,227,0.1); color: var(--accent); margin-bottom: 22px; font-size: 1.5rem; }
+.empty-state h3 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); font-weight: 600; letter-spacing: -0.02em; }
+.empty-state p { color: var(--muted); margin: 14px 0 28px; max-width: 46ch; font-size: 1.05rem; }
+.empty-state .badge-soon { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); background: rgba(0,113,227,0.1); padding: 6px 14px; border-radius: 100px; margin-bottom: 20px; }
+
+.event-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.event-card {
+  border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden;
+  background: var(--bg-2); box-shadow: var(--shadow);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s; display: flex; flex-direction: column;
+}
+.event-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.event-card .thumb { aspect-ratio: 4/3; overflow: hidden; position: relative; background: #111; }
+.event-card .thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease); }
+.event-card:hover .thumb img { transform: scale(1.05); }
+.event-card .thumb .date {
+  position: absolute; top: 12px; left: 12px; background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid rgba(255,255,255,0.6); border-radius: var(--r-xs); padding: 7px 11px; text-align: center; box-shadow: var(--shadow);
+}
+.event-card .thumb .date .d { font-size: 1.25rem; font-weight: 700; line-height: 1; color: var(--ink); }
+.event-card .thumb .date .m { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; }
+.event-card .info { padding: 20px; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+.event-card .info h4 { font-weight: 600; font-size: 1.25rem; line-height: 1.1; letter-spacing: -0.02em; }
+.event-card .info .loc { color: var(--muted); font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
+.event-card .info .btn { margin-top: auto; }
+.event-card.past .thumb img { filter: saturate(0.85); }
+
+/* ---------- sound / genres ---------- */
+.sound { background: var(--bg-2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.genre-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.genre {
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line); box-shadow: var(--glass-hi);
+  padding: 30px 24px; border-radius: var(--r-md); transition: transform 0.35s var(--ease), box-shadow 0.35s; position: relative;
+}
+.genre:hover { transform: translateY(-3px); box-shadow: var(--glass-hi), var(--shadow); }
+.genre .num { color: var(--faint); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; }
+.genre h3 { font-weight: 600; font-size: 1.4rem; letter-spacing: -0.02em; margin: 12px 0 7px; }
+.genre p { color: var(--muted); font-size: 0.9rem; }
+.genre::after { content:""; position:absolute; left:24px; bottom:22px; width:0; height:2px; background: var(--accent); border-radius:2px; transition: width 0.4s var(--ease); }
+.genre:hover::after { width: 34px; }
+
+/* ---------- artists ---------- */
+.artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.artist {
+  border: 1px solid var(--line); border-radius: var(--r-md); padding: 26px;
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-hi);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s; position: relative;
+}
+.artist:hover { transform: translateY(-4px); box-shadow: var(--glass-hi), var(--shadow); }
+.artist .badge { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+.artist h3 { font-weight: 600; font-size: 1.55rem; line-height: 1; letter-spacing: -0.02em; margin: 11px 0 13px; }
+.artist p { color: var(--muted); font-size: 0.94rem; min-height: 70px; line-height: 1.45; }
+.artist .links { display: flex; gap: 9px; margin-top: 16px; }
+.artist .links a { width: 38px; height: 38px; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; color: var(--muted); transition: 0.25s; font-size: 0.9rem; }
+.artist .links a:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,113,227,0.06); }
+
+/* ---------- membership ---------- */
+.member { background: var(--bg); }
+.member-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.tier {
+  border: 1px solid var(--line); border-radius: var(--r-lg); padding: 38px;
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--glass-hi), var(--shadow); display: flex; flex-direction: column;
+}
+.tier.featured { border-color: rgba(0,113,227,0.4); box-shadow: var(--glass-hi), 0 14px 40px -14px var(--accent-glow); }
+.tier .ring { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); }
+.tier h3 { font-weight: 600; font-size: 1.85rem; letter-spacing: -0.02em; margin: 12px 0; }
+.tier .price { font-size: 1.15rem; font-weight: 600; color: var(--ink); margin-bottom: 18px; }
+.tier .price span { color: var(--muted); font-size: 0.9rem; font-weight: 400; }
+.tier ul.feat { display: flex; flex-direction: column; gap: 12px; margin: 4px 0 28px; }
+.tier ul.feat li { display: flex; gap: 10px; color: var(--muted); font-size: 0.96rem; align-items: flex-start; }
+.tier ul.feat li::before { content: ""; width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; border-radius: 50%; background: rgba(0,113,227,0.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 13l4 4L19 7' stroke='%230071e3' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat; }
+.tier .btn { margin-top: auto; }
+.member-note { margin-top: 34px; max-width: 64ch; }
+.member-note .lead-serif { font-size: 1.5rem; line-height: 1.4; display: block; color: var(--ink); letter-spacing: -0.02em; }
+
+/* ---------- application form ---------- */
+.apply { background: radial-gradient(120% 90% at 50% 0%, rgba(0,113,227,0.06), transparent 55%); }
+.form-shell {
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--glass-strong); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--glass-hi), var(--shadow-lg); padding: clamp(26px, 4vw, 52px); max-width: 880px; margin-inline: auto;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: 0.82rem; color: var(--muted); font-weight: 500; }
+.field label .req { color: var(--accent); }
+.field input, .field select, .field textarea {
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--ink);
+  padding: 13px 15px; font-family: var(--font); font-size: 0.98rem; transition: border-color 0.2s, box-shadow 0.2s; width: 100%;
+}
+.field textarea { resize: vertical; min-height: 108px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,0.18); }
+.field input::placeholder, .field textarea::placeholder { color: var(--faint); }
+.field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236e6e73' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; }
+
+.dj-toggle { grid-column: 1/-1; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 18px; background: var(--bg-2); }
+.dj-toggle .txt strong { font-weight: 600; display: block; }
+.dj-toggle .txt small { color: var(--muted); }
+.switch { width: 51px; height: 31px; border-radius: 100px; background: rgba(0,0,0,0.15); position: relative; transition: background 0.3s; flex-shrink: 0; }
+.switch::after { content:""; position:absolute; top:2px; left:2px; width:27px; height:27px; border-radius:50%; background:#fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.3s var(--ease); }
+.switch.on { background: #34c759; } /* iOS green toggle */
+.switch.on::after { transform: translateX(20px); }
+.dj-fields { grid-column: 1/-1; display: none; grid-template-columns: 1fr 1fr; gap: 18px; }
+.dj-fields.show { display: grid; }
+
+.checkbox { grid-column: 1/-1; display: flex; gap: 11px; align-items: flex-start; color: var(--muted); font-size: 0.94rem; }
+.checkbox input { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 1px; flex-shrink: 0; }
+.form-actions { grid-column: 1/-1; display: flex; align-items: center; gap: 16px; margin-top: 6px; flex-wrap: wrap; }
+.form-msg { font-size: 0.92rem; }
+.form-msg.ok { color: #1d8a3a; }
+.form-msg.err { color: #d9342b; }
+.form-success { text-align: center; padding: 28px 10px; display: none; }
+.form-success.show { display: block; }
+.form-success .check { width: 62px; height: 62px; border-radius: 50%; background: #34c759; display: grid; place-items: center; margin: 0 auto 20px; }
+.form-success h3 { font-weight: 600; font-size: 1.7rem; letter-spacing: -0.02em; }
+.form-success p { color: var(--muted); margin-top: 10px; }
+
+/* ---------- gallery ---------- */
+.gallery-grid { columns: 3; column-gap: 14px; }
+.gallery-grid figure { break-inside: avoid; margin-bottom: 14px; border-radius: var(--r-md); overflow: hidden; position: relative; box-shadow: var(--shadow); background: #111; }
+.gallery-grid img { width: 100%; transition: transform 0.6s var(--ease), filter 0.4s; }
+.gallery-grid figure:hover img { transform: scale(1.04); filter: brightness(1.08); }
+
+/* ---------- info / rules ---------- */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: start; }
+.rules { display: flex; flex-direction: column; }
+.rule { display: flex; gap: 18px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.rule .n { font-size: 1.3rem; color: var(--accent); font-weight: 700; min-width: 36px; }
+.rule h4 { font-weight: 600; font-size: 1.05rem; letter-spacing: -0.01em; }
+.rule p { color: var(--muted); font-size: 0.94rem; margin-top: 4px; }
+
+.accordion { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); box-shadow: var(--glass-hi); }
+.acc-item { border-bottom: 1px solid var(--line); }
+.acc-item:last-child { border-bottom: none; }
+.acc-head { width: 100%; text-align: left; padding: 20px 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; font-weight: 600; font-size: 1.02rem; letter-spacing: -0.01em; }
+.acc-head .plus { color: var(--accent); transition: transform 0.3s; font-size: 1.25rem; font-weight: 400; }
+.acc-item.open .plus { transform: rotate(45deg); }
+.acc-body { max-height: 0; overflow: hidden; transition: max-height 0.4s var(--ease); }
+.acc-body .inner { padding: 0 22px 22px; color: var(--muted); font-size: 0.96rem; }
+.acc-body .inner p { margin-bottom: 11px; }
+
+/* ---------- contact / footer ---------- */
+.footer { border-top: 1px solid var(--line); background: var(--bg-2); padding-top: clamp(64px, 8vw, 110px); }
+.contact-top { display: grid; grid-template-columns: 1.4fr 1fr; gap: 50px; padding-bottom: 64px; border-bottom: 1px solid var(--line); }
+.contact-top h2 { font-weight: 600; font-size: clamp(2rem, 6vw, 4.2rem); line-height: 1; letter-spacing: -0.03em; }
+.contact-top h2 a { color: var(--accent); }
+.contact-cols { display: flex; gap: 50px; flex-wrap: wrap; }
+.contact-cols .col h5 { font-size: 0.74rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); margin-bottom: 14px; }
+.contact-cols .col a, .contact-cols .col p { display: block; color: var(--muted); margin-bottom: 7px; transition: color 0.2s; }
+.contact-cols .col a:hover { color: var(--accent); }
+.footer-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 26px 0; }
+.footer-bottom img { height: 18px; filter: invert(1) brightness(0.18); }
+.footer-bottom .copy { color: var(--faint); font-size: 0.82rem; }
+.footer-bottom .socials { display: flex; gap: 9px; }
+.footer-bottom .socials a { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 50%; display: grid; place-items: center; color: var(--muted); transition: 0.25s; }
+.footer-bottom .socials a:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- reveal ---------- */
+/* Deliberately inert. These used to start hidden and wait for an observer that
+   could never fire on a tall block, which left whole sections of the page
+   permanently blank — and blank for everyone with JavaScript off. The class is
+   kept because six pages carry it; it just does nothing now. */
+.reveal { opacity: 1; transform: none; }
+
+/* ---------- cinematic statement band ----------
+
+   BUG, and why the scrim moved off ::after
+
+   The darkening gradient used to be `.statement::after`. Further down this
+   file the Liquid Glass block redefines ::after on every glass surface — and
+   .statement is in that list — to paint the pale light-wash instead. Same
+   pseudo-element, later in the cascade, so it won. The band lost its scrim
+   entirely and has been running white display type over a bare photo,
+   picking up a faint white wash on top for good measure.
+
+   The gradient now lives on .bg, which is a real element nothing else claims,
+   layered above the photo in the same background shorthand so it costs no
+   extra box. ::after stays free for the glass wash it was taken over for.
+
+   The photograph is also pre-converted to greyscale in the file now, so the
+   `grayscale(1)` filter that used to run over a full-bleed image on every
+   paint is gone, and the asset is a quarter of the size it was. */
+.statement {
+  position: relative; min-height: 78vh; display: grid; place-items: center;
+  text-align: center; color: #fff; overflow: hidden; background: #000;
+  isolation: isolate;   /* keep the band's z-indexes to itself */
+}
+.statement .bg {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.7)),
+    url("assets/statement-bg.jpg") center / cover no-repeat;
+  filter: contrast(1.06) brightness(0.62);
+}
+.statement .inner { position: relative; z-index: 2; padding: 90px 26px; max-width: 940px; }
+.statement .eyebrow { color: #fff; justify-content: center; }
+.statement .eyebrow::before { background: #fff; }
+.statement h2 {
+  font-weight: 700; text-transform: uppercase; letter-spacing: -0.03em;
+  font-size: clamp(2.6rem, 9vw, 6.4rem); line-height: 0.92; margin: 20px 0 22px;
+}
+.statement p { color: rgba(255,255,255,0.82); font-size: 1.18rem; max-width: 48ch; margin: 0 auto 32px; line-height: 1.45; }
+.statement .btn-primary { background: rgba(255,255,255,0.92); border-color: rgba(255,255,255,0.9); }
+.statement .btn-primary:hover { background: #fff; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+  .nav-links, .nav-cta .btn { display: none; }
+  .nav-toggle { display: block; }
+  .nav.open { background: rgba(245,245,247,0.92); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); }
+  .nav.open .nav-logo img { filter: invert(1) brightness(0.18); }
+  .nav.open .nav-toggle { border-color: var(--line); background: var(--glass); }
+  .nav.open .nav-toggle span { background: var(--ink); }
+  .nav.open .nav-links { display: flex; position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; padding: 16px; border-bottom: 1px solid var(--line); gap: 4px; }
+  .nav.open .nav-links a { width: 100%; padding: 13px 15px; color: var(--muted); }
+  /* Phones get a darker fade-out, because they are held at arm's length in a
+     dark room and the text over it needs the contrast. Costs nothing now that
+     this is opacity rather than a per-frame blur. */
+  .hero-bg-blur { filter: blur(16px) saturate(1.1) brightness(0.66); }
+  .hero-logo img { width: min(86vw, 460px); }
+  .member-grid { grid-template-columns: 1fr; }
+  .about-grid { grid-template-columns: 1fr !important; gap: 18px !important; }
+  .info-grid { grid-template-columns: 1fr; gap: 36px; }
+  .contact-top { grid-template-columns: 1fr; gap: 32px; }
+  .gallery-grid { columns: 2; }
+  .form-grid, .dj-fields { grid-template-columns: 1fr; }
+  .statement { min-height: 60vh; }
+}
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .wrap { padding-inline: 18px; }
+  .nav { padding-inline: 18px; }
+  .gallery-grid { columns: 1; }
+  .hero-sub { flex-direction: column; align-items: flex-start; }
+  .genre-grid { grid-template-columns: 1fr 1fr; }
+  .announce .full { display: none; }
+  .announce { padding: 0 40px; }
+}
+/* ---------- about section ---------- */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px 50px; }
+.about-grid p { color: var(--muted); font-size: 1.08rem; line-height: 1.5; }
+.about-grid p:first-child { color: var(--ink); font-weight: 500; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 42px; }
+.chips span {
+  font-size: 0.86rem; font-weight: 500; color: var(--ink);
+  background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  border: 1px solid var(--line); box-shadow: var(--glass-hi);
+  padding: 9px 17px; border-radius: 100px;
+}
+
+/* ---------- liquid-glass specular rim (subtle, on hover) ---------- */
+.tier:hover, .empty-state:hover, .form-shell:hover {
+  box-shadow: var(--glass-hi), inset 0 0 26px rgba(255, 255, 255, 0.28), var(--shadow-lg);
+}
+
+/* ===========================================================
+   LIQUID GLASS — visible refraction on pills & cards
+   =========================================================== */
+
+/* clear glass pills/icons */
+.badge-soon {
+  color: var(--ink); background: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--glass-hi);
+}
+.empty-state .pin {
+  background: rgba(255, 255, 255, 0.45); color: var(--ink);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--glass-hi), 0 6px 18px -8px rgba(0,0,0,0.2);
+}
+
+/* make the glass on cards readable as glass (not flat white) */
+.glass, .genre, .artist, .tier, .empty-state, .accordion, .form-shell,
+.event-card .thumb .date, .nav-toggle, .chips span {
+  background: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: blur(22px) saturate(220%); backdrop-filter: blur(22px) saturate(220%);
+}
+.tier, .empty-state, .form-shell, .artist {
+  box-shadow: var(--glass-hi), var(--shadow);
+}
+
+/* nav glass when scrolled — a touch more transparent */
+.nav.scrolled { background: rgba(245, 245, 247, 0.6); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+
+/* ===========================================================
+   DARK "GLASS OVER BLURRED VIDEO" THEME (Pacha-style)
+   Content floats as frosted glass over the fixed, blurred
+   video frame. Light text on dark; later in cascade so it
+   overrides the earlier light-glass surfaces.
+   =========================================================== */
+:root {
+  --ink:    #f4f5f7;
+  --muted:  rgba(255, 255, 255, 0.66);
+  --faint:  rgba(255, 255, 255, 0.44);
+  --line:   rgba(255, 255, 255, 0.14);
+  --line-2: rgba(255, 255, 255, 0.24);
+  --bg:     #0a0b0f;
+  --bg-2:   rgba(255, 255, 255, 0.05);
+  --glass:        rgba(255, 255, 255, 0.08);
+  --glass-strong: rgba(255, 255, 255, 0.12);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.20), inset 0 -10px 22px rgba(255, 255, 255, 0.03);
+  --accent:      #ff2a2a;
+  --accent-soft: #ff5c5c;
+  --accent-glow: rgba(255, 42, 42, 0.32);
+  --shadow:    0 12px 36px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 26px 64px -14px rgba(0, 0, 0, 0.62);
+}
+body { background: #07080c; color: var(--ink); }
+::selection { background: rgba(255,255,255,0.85); color: #0a0b0f; }
+
+/* text that floats directly over the blurred video gets a soft shadow for
+   legibility (glass-panel text already has local contrast) */
+.section-head h2, .section-head p, .about-grid p, .member-note .lead-serif,
+.contact-top h2, .hero-tagline, .rule h4, .rule p {
+  text-shadow: 0 1px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* frosted glass surfaces (override the white-frost rule above) */
+.glass, .genre, .artist, .tier, .empty-state, .accordion, .form-shell,
+.event-card .thumb .date, .nav-toggle, .chips span, .tabs, .hero-badge {
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(26px) saturate(150%); backdrop-filter: blur(26px) saturate(150%);
+  border-color: var(--line);
+}
+.tier, .empty-state, .form-shell, .artist, .accordion {
+  box-shadow: var(--glass-hi), var(--shadow);
+}
+.form-shell { background: rgba(255, 255, 255, 0.06); }
+
+/* buttons on the dark glass */
+.btn { color: var(--ink); background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 10px 26px -14px rgba(0,0,0,0.6); }
+.btn:hover { background: rgba(255,255,255,0.18); }
+.btn-primary { background: #fff; color: #0a0b0f; border-color: #fff; box-shadow: 0 10px 30px -12px rgba(0,0,0,0.6); }
+.btn-primary:hover { background: rgba(255,255,255,0.88); }
+.btn-ghost { background: rgba(255,255,255,0.05); }
+
+/* nav — stays light-on-glass at all times (no light-mode swap) */
+.nav.scrolled { background: rgba(10, 11, 15, 0.55);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-bottom-color: var(--line); }
+.nav-logo img,
+.nav.scrolled .nav-logo img,
+.nav.open .nav-logo img { filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+.nav.scrolled .nav-links a { color: var(--muted); }
+.nav.scrolled .nav-links a:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.nav.scrolled .nav-cta .btn { color: #0a0b0f; background: #fff; border-color: #fff; box-shadow: 0 8px 22px -12px rgba(0,0,0,0.5); }
+.nav.scrolled .nav-toggle { border-color: var(--line); background: rgba(255,255,255,0.08); }
+.nav.scrolled .nav-toggle span { background: #fff; }
+.nav.open { background: rgba(10, 11, 15, 0.85); }
+.nav.open .nav-toggle { border-color: var(--line); background: rgba(255,255,255,0.08); }
+.nav.open .nav-toggle span { background: #fff; }
+.nav.open .nav-links a { color: var(--muted); }
+
+/* sections: let the blurred video show through (no opaque fills) */
+.sound, .member { background: transparent; }
+.sound { border-color: var(--line); }
+.footer { background: rgba(8, 9, 13, 0.55); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-top-color: var(--line); }
+.footer-bottom img { filter: brightness(0) invert(1); }
+
+/* event cards become dark glass (were solid white) */
+.event-card { background: rgba(255,255,255,0.06);
+  -webkit-backdrop-filter: blur(22px) saturate(150%); backdrop-filter: blur(22px) saturate(150%);
+  border-color: var(--line); box-shadow: var(--shadow); }
+.event-card .thumb { background: #0c0d12; aspect-ratio: 4/5; }
+.event-card .thumb .ev-tag {
+  position: absolute; top: 12px; left: 12px;
+  font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;
+  color: #fff; background: rgba(10,11,15,0.45);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 100px; padding: 6px 12px;
+}
+.event-card .ev-desc { color: var(--muted); font-size: 0.92rem; line-height: 1.45; margin: 2px 0 4px; }
+
+/* tabs */
+.tab { color: var(--muted); }
+.tab.active { background: #fff; color: #0a0b0f; }
+
+/* empty-state pin + soon badge on dark */
+.badge-soon { color: #fff; background: rgba(255,255,255,0.1); }
+.empty-state .pin { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* form fields on dark */
+.field input, .field select, .field textarea {
+  background-color: rgba(255,255,255,0.06); border-color: var(--line); color: var(--ink); }
+.field input::placeholder, .field textarea::placeholder { color: var(--faint); }
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffffff' stroke-width='1.5' opacity='.6'/%3E%3C/svg%3E"); }
+.field select option { background: #14151b; color: var(--ink); }
+.dj-toggle { background: rgba(255,255,255,0.05); border-color: var(--line); }
+.switch { background: rgba(255,255,255,0.22); }
+
+/* membership tier featured rim glow */
+.tier.featured { border-color: rgba(255,42,42,0.5); box-shadow: var(--glass-hi), 0 16px 46px -14px var(--accent-glow); }
+.tier ul.feat li::before {
+  background: rgba(255,42,42,0.18) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M5 13l4 4L19 7' stroke='%23ff2a2a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 10px no-repeat;
+}
+
+/* specular hover rim tuned for dark */
+.tier:hover, .empty-state:hover, .form-shell:hover {
+  box-shadow: var(--glass-hi), inset 0 0 30px rgba(255,255,255,0.08), var(--shadow-lg);
+}
+
+/* hairline separators that used dark lines now use light --line automatically;
+   keep the apply section's faint glow subtle on dark */
+.apply { background: radial-gradient(120% 90% at 50% 0%, rgba(255,42,42,0.08), transparent 55%); }
+
+/* ---- anti-flicker: promote images/cards to their own GPU layers so they
+   don't re-rasterize with the fixed, blurred video backdrop on scroll ---- */
+.gallery-grid figure, .event-card { transform: translateZ(0); }
+.gallery-grid img, .event-card .thumb img {
+  transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.gallery-grid figure { contain: paint; }
+
+/* ---- Billetto organiser calendar widget embed ---- */
+.billetto-embed {
+  border-radius: var(--r-lg); overflow: hidden; background: #fff;
+  border: 1px solid var(--line); box-shadow: var(--shadow-lg);
+  min-height: 320px;
+}
+.billetto-embed billetto-organiser-widget { display: block; width: 100%; }
+.events-note { margin-top: 20px; text-align: center; color: var(--muted); font-size: 0.95rem; }
+.events-note a { color: var(--accent); }
+.events-note a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ===========================================================
+   GDPR COOKIE CONSENT — CENTRED MODAL (industry standard)
+   =========================================================== */
+
+/* Dark full-screen overlay */
+.cookie-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: opacity 0.35s var(--ease), visibility 0.35s;
+  opacity: 1;
+  visibility: visible;
+}
+
+.cookie-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Modal container — centred */
+.cookie-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  transition: opacity 0.35s var(--ease), visibility 0.35s;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none; /* clicks pass through to inner */
+}
+
+.cookie-modal.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* The actual card */
+.cookie-modal-inner {
+  pointer-events: all;
+  width: 100%;
+  max-width: 480px;
+  background: rgba(12, 13, 18, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04) inset,
+    0 32px 80px rgba(0, 0, 0, 0.7),
+    0 8px 24px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 32px;
+  animation: modal-in 0.38s var(--ease) both;
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Brand logo */
+.cookie-brand {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: -4px;
+}
+
+.cookie-logo {
+  height: 28px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+/* Header */
+.cookie-kicker {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  font-weight: 600;
+}
+
+.cookie-head h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* Body text */
+#cookieDesc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+/* Category rows */
+.cookie-option-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cookie-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.cookie-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.cookie-option--locked {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.cookie-option--locked:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.cookie-option input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.cookie-option .option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cookie-option strong {
+  color: var(--ink);
+  font-size: 0.94rem;
+  font-weight: 600;
+}
+
+.cookie-option .desc {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* "Always on" badge */
+.cookie-always-on {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #34c759;
+  background: rgba(52, 199, 89, 0.12);
+  border: 1px solid rgba(52, 199, 89, 0.25);
+  padding: 4px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* CTA buttons — equal prominence */
+.cookie-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cookie-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 20px;
+  border-radius: var(--r-sm);
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s, background 0.2s;
+}
+
+.cookie-btn:hover {
+  transform: translateY(-1px);
+}
+
+.cookie-btn--accept {
+  background: #fff;
+  color: #0a0b0f;
+  border-color: #fff;
+  box-shadow: 0 6px 20px rgba(255,255,255,0.12);
+}
+
+.cookie-btn--accept:hover {
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 10px 28px rgba(255,255,255,0.18);
+}
+
+.cookie-btn--deny {
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.cookie-btn--deny:hover {
+  background: rgba(255,255,255,0.13);
+  border-color: rgba(255,255,255,0.24);
+}
+
+/* Footer row */
+.cookie-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.cookie-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(255,255,255,0.5);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.2s;
+}
+
+.cookie-link:hover {
+  color: var(--ink);
+}
+
+.cookie-footnote {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.78rem;
+}
+
+/* Floating re-open trigger */
+.cookie-trigger {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 2999;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  background: rgba(12, 13, 18, 0.88);
+  color: rgba(255,255,255,0.55);
+  font-size: 1rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.32);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.cookie-trigger:hover {
+  transform: scale(1.08);
+  border-color: rgba(255,255,255,0.3);
+  color: var(--ink);
+}
+
+@media (max-width: 560px) {
+  .cookie-modal-inner {
+    padding: 24px 20px;
+    gap: 16px;
+    border-radius: var(--r-md);
+  }
+
+  .cookie-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .cookie-btn--deny {
+    order: 1;
+  }
+
+  .cookie-btn--accept {
+    order: 0;
+  }
+}
+
+
+/* ===========================================================
+   UPCOMING EVENT TICKET WIDGET — High-converting CTA
+   =========================================================== */
+
+.ticket-widget-wrap {
+  margin-top: auto;
+  padding-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Urgency badge */
+.ticket-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: rgba(255, 42, 42, 0.12);
+  border: 1px solid rgba(255, 42, 42, 0.3);
+  border-radius: 100px;
+  padding: 6px 14px;
+  width: fit-content;
+}
+
+/* Pulsing red dot */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.6);
+  animation: pulse-ring 1.8s ease-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.7); }
+  70%  { box-shadow: 0 0 0 8px rgba(255, 42, 42, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 42, 42, 0); }
+}
+
+/* Force the Billetto widget iframe/button to be full-width and tall */
+.ticket-widget-wrap billetto-organiser-widget {
+  display: block;
+  width: 100%;
+}
+
+/* Target the shadow-DOM button Billetto renders via a wrapper */
+.ticket-widget-wrap billetto-organiser-widget::part(button),
+.ticket-widget-wrap billetto-organiser-widget button {
+  width: 100% !important;
+  min-height: 54px !important;
+  font-size: 1rem !important;
+}
+
+/* Outer glow wrapper that lights up on hover to draw the eye */
+.ticket-cta-outer {
+  position: relative;
+  border-radius: var(--r-sm);
+  padding: 3px;
+  background: linear-gradient(135deg, var(--accent) 0%, #ff6b35 100%);
+  box-shadow:
+    0 0 0 0 rgba(255, 42, 42, 0.4),
+    0 12px 36px -8px rgba(255, 42, 42, 0.5);
+  transition: box-shadow 0.4s var(--ease), transform 0.3s var(--ease);
+  animation: cta-glow-pulse 3s ease-in-out infinite;
+}
+
+.ticket-cta-outer:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 6px rgba(255, 42, 42, 0.15),
+    0 20px 48px -8px rgba(255, 42, 42, 0.65);
+  animation: none;
+}
+
+@keyframes cta-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 42, 42, 0.4), 0 12px 36px -8px rgba(255, 42, 42, 0.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(255, 42, 42, 0.12), 0 18px 44px -8px rgba(255, 42, 42, 0.6); }
+}
+
+/* Inner shell that the Billetto widget sits inside */
+.ticket-cta-inner {
+  background: var(--accent);
+  border-radius: calc(var(--r-sm) - 2px);
+  overflow: hidden;
+  width: 100%;
+}
+
+.ticket-cta-inner billetto-organiser-widget {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+}
+
+/* ===========================================================
+   BILLETTO ORGANISER BUTTON — full custom styling
+   =========================================================== */
+
+billetto-organiser-button {
+  display: block;
+  width: 100%;
+}
+
+billetto-organiser-button button {
+  /* Layout */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-height: 56px !important;
+  padding: 16px 28px !important;
+
+  /* Typography */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+
+  /* Appearance */
+  background: linear-gradient(135deg, #ff2a2a 0%, #e01818 100%) !important;
+  border: none !important;
+  border-radius: var(--r-sm) !important;
+  cursor: pointer !important;
+
+  /* Shadow & glow */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 18px -4px rgba(255, 42, 42, 0.7) !important;
+
+  /* Transition */
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s !important;
+}
+
+billetto-organiser-button button:hover {
+  background: linear-gradient(135deg, #ff4040 0%, #ff2a2a 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 10px 32px -4px rgba(255, 42, 42, 0.75) !important;
+}
+
+billetto-organiser-button button:active {
+  transform: translateY(0) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 4px 14px -4px rgba(255, 42, 42, 0.6) !important;
+}
+
+/* =========================================================
+   LANGUAGE SWITCH
+   Lives in .nav-cta next to the Tickets button. Two small
+   pills; the active one borrows the site's accent. No new
+   colours — everything is a styles.css token.
+   ========================================================= */
+.lang-switch {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--line); border-radius: 100px;
+  overflow: hidden; margin-right: 10px; flex: none;
+}
+.lang-switch button {
+  appearance: none; border: 0; background: transparent;
+  color: var(--muted); cursor: pointer;
+  font: inherit; font-size: 0.74rem; font-weight: 600;
+  letter-spacing: 0.08em; padding: 6px 11px; line-height: 1;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.lang-switch button:hover { color: var(--ink); }
+.lang-switch button.on { background: var(--accent); color: #fff; }
+
+/* The mobile nav stacks; keep the switch on the bar itself rather than
+   hiding it behind the burger, since it's the one control a Swedish
+   visitor needs before they've read anything. */
+@media (max-width: 720px) {
+  .lang-switch { margin-right: 8px; }
+  .lang-switch button { padding: 6px 9px; font-size: 0.7rem; }
+}
+
+/* ===========================================================
+   LIQUID GLASS
+   The refraction itself lives in src/liquid-glass.js, which
+   bends the backdrop with an SVG displacement filter. What is
+   here is everything light does ON the surface rather than
+   through it: the thickness, the rim, the sheen.
+
+   Nothing in here draws a shape. Every value is a gradient or
+   a soft shadow that fades to nothing, because the moment the
+   eye can find where an effect starts, it stops being glass
+   and becomes a border.
+   =========================================================== */
+
+:root {
+  /* The inner light of a thick slab, in four parts: a crisp hairline where
+     the top edge catches the light, a whisper of the same along the bottom,
+     a glow falling from the top surface, and a softer bounce rising from the
+     bottom. Every glow uses a large blur with a negative spread so it decays
+     to nothing rather than ending. Spreads stay well under half the height of
+     the smallest glass element (the ~44px tabs pill) because inset-shadow
+     geometry degenerates into a white smear on short elements. */
+  --glass-hi:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 10px 24px -20px rgba(255, 255, 255, 0.20),
+    inset 0 -12px 26px -22px rgba(255, 255, 255, 0.14);
+}
+
+/* ---------- ambient light for the glass to refract ----------
+   Slow drifting colour behind everything. Without something structured back
+   there, a lens has nothing to bend and the effect is invisible. */
+.aura {
+  display: block; position: fixed; z-index: 0; pointer-events: none;
+  width: 46vmax; height: 46vmax; border-radius: 50%;
+  top: -14vmax; left: -10vmax;
+  background: radial-gradient(circle, rgba(255, 42, 42, 0.13), transparent 62%);
+  animation: auraDrift 34s ease-in-out infinite alternate;
+}
+.aura-2 {
+  top: auto; left: auto; right: -12vmax; bottom: -8vmax;
+  background: radial-gradient(circle, rgba(63, 111, 214, 0.11), transparent 62%);
+  animation-duration: 41s; animation-delay: -12s;
+}
+.aura-3 {
+  top: 30%; left: 55%; width: 34vmax; height: 34vmax;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05), transparent 60%);
+  animation-duration: 47s; animation-delay: -25s;
+}
+@keyframes auraDrift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(7vmax, 5vmax, 0) scale(1.18); }
+}
+
+/* ---------- the surface ----------
+   A lighter tint than plain frost would use: the lens underneath supplies the
+   substance now, so the fill only has to hint at it. Milk it up and the
+   refraction disappears behind the paint. */
+.glass, .form-shell, .tier, .empty-state, .accordion, .event-card,
+.statement, .genre, .artist {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.045);
+}
+
+/* ---------- light across the face ----------
+   Off-axis, because glass is never lit evenly: a broad wash from the upper
+   left and a fainter answer at the lower right, both feathered out over half
+   the surface so neither has an edge. */
+.glass::after, .form-shell::after, .tier::after, .empty-state::after,
+.accordion::after, .event-card::after, .statement::after,
+.genre::after, .artist::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(125% 85% at 16% -12%, rgba(255, 255, 255, 0.13), transparent 58%),
+    radial-gradient(105% 75% at 88% 114%, rgba(255, 255, 255, 0.055), transparent 55%);
+  opacity: 0.85;
+  transition: opacity 0.45s var(--ease);
+}
+.form-shell:hover::after, .tier:hover::after, .empty-state:hover::after,
+.event-card:hover::after, .genre:hover::after, .artist:hover::after { opacity: 1; }
+
+/* Content has to sit above that wash. */
+.glass > *, .form-shell > *, .tier > *, .empty-state > *, .accordion > *,
+.event-card > *, .statement > *, .genre > *, .artist > * { position: relative; z-index: 1; }
+
+/* ---------- the rim ----------
+   A one-pixel band around the edge, brightest at the top-left and again at the
+   bottom-right, as a pane lit from off-axis actually is. This is the only hard
+   line in the whole effect, and glass really does have one. */
+.glass::before, .form-shell::before, .tier::before, .empty-state::before,
+.accordion::before, .event-card::before, .statement::before,
+.genre::before, .artist::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; z-index: 2; padding: 1px;
+  background: linear-gradient(148deg,
+    rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.05) 34%,
+    rgba(255, 255, 255, 0.03) 64%, rgba(255, 255, 255, 0.30));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* ---------- pointer-tracked sheen (--gx/--gy set by liquid-glass.js) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  .form-shell, .tier, .empty-state, .event-card, .genre, .artist, .accordion {
+    background-image: radial-gradient(560px circle at var(--gx, 50%) var(--gy, -40%),
+      rgba(255, 255, 255, 0.07), transparent 44%);
+  }
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 45%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -12px 24px -16px rgba(255, 255, 255, 0.10),
+    0 10px 26px -14px rgba(0, 0, 0, 0.6);
+}
+.btn:active { transform: translateY(0) scale(0.985); }
+.btn-primary {
+  background-image: linear-gradient(180deg, #ffffff, #eceef1);
+  box-shadow: inset 0 1px 0 #fff, 0 10px 30px -12px rgba(0, 0, 0, 0.6);
+}
+.btn-ghost { background-image: none; }
+
+.nav.scrolled {
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07), 0 14px 34px -22px rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- keyboard focus ---------- */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 2px;
+}
+
+/* ---------- escape hatches ----------
+   Reduce Transparency is Apple's own switch for exactly this, and it turns
+   Liquid Glass into flat frost on iOS too. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .form-shell, .tier, .empty-state, .accordion, .event-card,
+  .genre, .artist, .chips span, .tabs, .nav.scrolled, .footer {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    background-color: rgba(18, 19, 25, 0.94);
+  }
+  .glass::after, .form-shell::after, .tier::after, .empty-state::after,
+  .accordion::after, .event-card::after, .statement::after,
+  .genre::after, .artist::after { display: none; }
+  .aura { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .aura { animation: none; } }
+@media (max-width: 720px) { .aura { width: 60vmax; height: 60vmax; opacity: 0.8; } }
+
+/* ===========================================================
+   MOBILE NAV READABILITY
+   Two separate problems, both worth writing down.
+
+   1. The open menu is absolutely positioned BELOW the bar, so
+      it sits outside the bar's own box. A backdrop-filter only
+      covers the element's own background box, so the bar was
+      frosted and the list of links hanging under it was not,
+      leaving the hero video running straight behind the words.
+
+   2. Giving the panel its own backdrop-filter does NOT fix that.
+      An element with a backdrop-filter becomes a backdrop root,
+      and a descendant can then only sample its ancestor rather
+      than the page behind, so the panel's blur is a no-op. The
+      same nesting trap the glass hit. Verified by measuring:
+      the panel was correctly on top and still see-through.
+
+   So the panel is simply near-opaque. On a phone, held at arm's
+   length, in a dark room, a menu that is merely tinted is a menu
+   somebody mis-taps.
+   =========================================================== */
+/* 900px, NOT 720px. This is the width at which .nav-links is hidden and the
+   hamburger appears (see the @media (max-width: 900px) block above), and these
+   rules are what give the panel that hamburger opens its background. Scoping
+   them to 720px left a 180-pixel-wide band — every window between 721 and 900
+   — where the menu opened as a fully transparent sheet of loose text floating
+   over the page. Measured on a 756px window: background rgba(0,0,0,0),
+   backdrop-filter none, panel 402px tall. A panel and the control that opens
+   it have to share one breakpoint; they are the same component. */
+@media (max-width: 900px) {
+  /* Only ONE of these two can have a backdrop-filter, so it goes on the panel,
+     which is the part that actually needs to be read. The bar keeps a solid
+     enough fill to stand on its own. The `none` is load-bearing: it overrides
+     .nav.scrolled, which would otherwise re-create the nesting trap the moment
+     the menu is opened after scrolling. */
+  .nav.open {
+    background: #0c0d12;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  /* Opaque, not tinted, and the opacity is what does the work — the blur is a
+     bonus for the machines that draw it.
+
+     Two things made a tinted panel unreadable. On tier "low" the rule at the
+     bottom of this file strips backdrop-filter outright, so what was left was
+     0.86 of a dark fill over a moving video: that is the "no blur" people
+     report, and reduce-transparency alone is enough to land you there. And
+     even where the blur does composite, Chromium leaves an element that has
+     its own backdrop-filter out of a later element's backdrop snapshot, so
+     the Est. 2024 pill and the Become a member button underneath punched
+     through it and stayed razor sharp.
+
+     A menu is not the place to lose that argument. Solid fill, blur kept. */
+  .nav.open .nav-links {
+    background: #0c0d12;
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    backdrop-filter: blur(30px) saturate(160%);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 22px 44px -20px rgba(0, 0, 0, 0.86);
+  }
+  /* Full-strength text rather than the muted grey the desktop bar uses:
+     this is the one place a mis-tap costs somebody the page they wanted. */
+  .nav.open .nav-links a {
+    color: rgba(255, 255, 255, 0.94);
+    border-radius: var(--r-sm);
+  }
+  .nav.open .nav-links a:hover,
+  .nav.open .nav-links a:active { background: rgba(255, 255, 255, 0.10); color: #fff; }
+}
+
+/* ===========================================================
+   TOUCH TARGETS
+   Standalone controls only. Inline links inside legal prose
+   are deliberately left at their natural line height: padding
+   them to 44px would tear the paragraphs apart, and a link in
+   the middle of a sentence is not something anyone stabs at.
+   These are the ones you actually aim for.
+   =========================================================== */
+@media (max-width: 720px) {
+  /* Dismiss the announcement bar: was a 28px square. The button stays the same
+     size to look at; the tappable area grows around it. */
+  .announce .x {
+    min-width: 44px; min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  /* The bar's own call to action sits on one text line, so it gets height from
+     padding rather than from font size. */
+  .announce p a { display: inline-block; padding: 8px 2px; }
+  .announce { padding-block: 2px; }
+
+  /* Language switch: the one control a Swedish visitor reaches for first. */
+  .lang-switch button { padding: 11px 14px; font-size: 0.76rem; }
+
+  /* Footer link columns are navigation, not prose. */
+  .contact-cols .col a { display: block; padding: 9px 0; }
+
+  /* Cookie banner buttons. */
+  .cookie-link { min-height: 44px; padding: 10px 14px; }
+
+  /* The logo is the way back to the front page, and it was a 22px strip. */
+  .nav-logo { padding: 11px 0; }
+
+  /* "Forgot password?" and friends: they look like links but they are the
+     controls that rescue somebody locked out, which is the worst possible
+     moment to miss. */
+  .acc-link { display: inline-block; padding: 10px 2px; min-height: 44px; }
+}
+
+/* ============================================================================
+   COUNTDOWN, EMPTY STATE ACTIONS, PHOTO VIEWER
+   ========================================================================= */
+
+/* A date says when. This says how soon, which is the part that brings anyone
+   back tomorrow. */
+.ev-count {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 10px 0 2px;
+  font-size: 0.74rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent);
+  padding: 5px 12px; border-radius: 100px;
+  background: rgba(255, 42, 42, 0.1);
+  border: 1px solid rgba(255, 42, 42, 0.28);
+}
+
+.empty-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+/* The cookie tab is pinned to the corner and would otherwise sit on top of a
+   full-screen photo. It is still one tap away once the photo is closed. */
+body.viewing .cookie-trigger { display: none; }
+
+/* ---------- photo viewer ---------- */
+.is-openable { cursor: zoom-in; }
+.event-card.past.is-openable { cursor: pointer; }
+.is-openable:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.viewer {
+  /* Above the cookie-settings tab (2999) but below the consent modal (3000),
+     which must always be able to sit on top of anything. */
+  position: fixed; inset: 0; z-index: 2999;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: clamp(4px, 2vw, 20px); padding: clamp(12px, 4vw, 40px);
+  background: rgba(6, 7, 10, 0.94);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  animation: viewer-in 0.22s var(--ease);
+}
+@keyframes viewer-in { from { opacity: 0; } to { opacity: 1; } }
+
+.viewer-stage { margin: 0; display: grid; place-items: center; gap: 12px; min-width: 0; }
+.viewer-stage img {
+  max-width: 100%; max-height: 82vh;
+  border-radius: var(--r-md); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7);
+  /* Photographs, not layout: never crop, never stretch. */
+  object-fit: contain;
+}
+.viewer-stage figcaption {
+  color: var(--faint); font-size: 0.78rem;
+  letter-spacing: 0.12em; font-variant-numeric: tabular-nums;
+}
+
+.viewer-nav, .viewer-x {
+  border: 1px solid var(--line); background: rgba(255, 255, 255, 0.06);
+  color: var(--ink); border-radius: 50%;
+  width: 46px; height: 46px; display: grid; place-items: center;
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+}
+.viewer-nav:hover, .viewer-x:hover {
+  background: rgba(255, 255, 255, 0.13); border-color: rgba(255, 255, 255, 0.3);
+}
+.viewer-nav:active { transform: scale(0.94); }
+.viewer-x {
+  position: absolute; top: clamp(12px, 3vw, 26px); right: clamp(12px, 3vw, 26px);
+  font-size: 1.4rem; z-index: 1;
+}
+
+@media (max-width: 640px) {
+  /* The arrows move off the sides and under the photo, because at 390px wide
+     they were eating a third of the picture. Swipe is the primary gesture. */
+  .viewer { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto; }
+  .viewer-stage { grid-column: 1 / -1; grid-row: 1; }
+  .viewer-nav.prev { grid-column: 1; grid-row: 2; justify-self: center; }
+  .viewer-nav.next { grid-column: 2; grid-row: 2; justify-self: center; }
+  .viewer-stage img { max-height: 68vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewer { animation: none; }
+}
+
+/* ============================================================================
+   PERFORMANCE
+
+   Everything above describes how the site should look. This describes what it
+   is allowed to cost, which is a different question, and the only one that
+   matters on a phone somebody has had for four years.
+
+   Three tiers, decided by the inline script in each page's <head> before the
+   first paint:
+
+     high   a desktop with a mouse. Everything, including the refraction lens.
+     mid    anything with a touch screen. Glass, at a blur radius that is
+            roughly half the work and, at these opacities, not a difference
+            you can point to without the two side by side.
+     low    four gigabytes of RAM or less, a slow connection, Save-Data, or
+            Reduce Transparency. No backdrop passes at all; the surfaces go
+            near-opaque, which is exactly what iOS does under Reduce
+            Transparency and is a perfectly good-looking page in its own right.
+
+   A tier is a budget, not a punishment: nothing is removed that the layout
+   depends on, and no tier loses any content or control.
+   ========================================================================= */
+
+/* ---------- content-visibility: tried, measured, rejected ----------
+   `content-visibility: auto` on the below-fold sections is the obvious move
+   here and it does work — the engine skips styling, layout and paint for a
+   section until it comes near the viewport, which on this page means not
+   laying out a nine-image multi-column gallery on load.
+
+   It is not used, because it breaks the in-page nav. Until a section has been
+   rendered once it stands in at its contain-intrinsic-size rather than its
+   real height, so every anchor below it is at the wrong document offset.
+   Measured on this page at 1280px wide: #info sits at 5743px with the
+   sections above it still standing in, and at 6337px once they have rendered.
+   Clicking "Info" in the nav lands you 594px short of the heading — which is
+   the exact complaint scroll-padding-top further up was added to fix.
+
+   An accurate contain-intrinsic-size would solve it, but the gallery is a
+   `columns` layout whose height roughly doubles at each breakpoint, so there
+   is no one number to give it. Left out on purpose; the wins that mattered
+   were the hero backdrop and the asset sizes, not this. */
+
+/* Cards can't affect anything outside themselves, so say so: a hover that
+   changes one card then costs one card's worth of work instead of a pass over
+   the whole grid. */
+.event-card, .genre, .artist, .tier, .work-teaser { contain: layout paint style; }
+
+/* ---------- mid: phones and tablets ----------
+   Blur radius is the expensive number in a backdrop pass, and it is the one
+   thing here nobody can see the exact value of. */
+[data-tier="mid"] {
+  --blur: saturate(140%) blur(12px);
+}
+[data-tier="mid"] .glass,
+[data-tier="mid"] .genre,
+[data-tier="mid"] .artist,
+[data-tier="mid"] .tier,
+[data-tier="mid"] .empty-state,
+[data-tier="mid"] .accordion,
+[data-tier="mid"] .form-shell,
+[data-tier="mid"] .event-card,
+[data-tier="mid"] .event-card .thumb .date,
+[data-tier="mid"] .nav-toggle,
+[data-tier="mid"] .chips span,
+[data-tier="mid"] .tabs,
+[data-tier="mid"] .hero-badge,
+[data-tier="mid"] .work-teaser,
+[data-tier="mid"] .btn,
+[data-tier="mid"] .footer,
+[data-tier="mid"] .viewer,
+[data-tier="mid"] .cookie-modal-inner {
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+/* Three drifting full-screen gradients exist to give the lens something to
+   bend. There is no lens on touch devices, so they are three permanently
+   composited screen-sized layers paying for nothing. */
+[data-tier="mid"] .aura,
+[data-tier="low"] .aura { display: none; }
+
+/* ---------- low: the cheap seats ----------
+   No backdrop-filter anywhere. This is the same substitution the
+   prefers-reduced-transparency block above makes, and it is Apple's own
+   fallback, so it is a finished look rather than a degraded one. */
+[data-tier="low"] .glass,
+[data-tier="low"] .genre,
+[data-tier="low"] .artist,
+[data-tier="low"] .tier,
+[data-tier="low"] .empty-state,
+[data-tier="low"] .accordion,
+[data-tier="low"] .form-shell,
+[data-tier="low"] .event-card,
+[data-tier="low"] .event-card .thumb .date,
+[data-tier="low"] .event-card .thumb .ev-tag,
+[data-tier="low"] .nav-toggle,
+[data-tier="low"] .chips span,
+[data-tier="low"] .tabs,
+[data-tier="low"] .hero-badge,
+[data-tier="low"] .work-teaser,
+[data-tier="low"] .btn,
+[data-tier="low"] .nav.scrolled,
+[data-tier="low"] .nav.open .nav-links,
+[data-tier="low"] .footer,
+[data-tier="low"] .viewer,
+[data-tier="low"] .cookie-overlay,
+[data-tier="low"] .cookie-modal-inner,
+[data-tier="low"] .cookie-trigger {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+[data-tier="low"] .glass,
+[data-tier="low"] .genre,
+[data-tier="low"] .artist,
+[data-tier="low"] .tier,
+[data-tier="low"] .empty-state,
+[data-tier="low"] .accordion,
+[data-tier="low"] .form-shell,
+[data-tier="low"] .event-card,
+[data-tier="low"] .work-teaser,
+[data-tier="low"] .tabs { background-color: rgba(18, 19, 25, 0.92); }
+[data-tier="low"] .nav.scrolled { background: rgba(10, 11, 15, 0.94); }
+[data-tier="low"] .footer { background: rgba(8, 9, 13, 0.96); }
+[data-tier="low"] .btn { background-color: rgba(38, 40, 48, 0.94); }
+[data-tier="low"] .btn-primary { background-color: #fff; }
+[data-tier="low"] .hero-badge,
+[data-tier="low"] .event-card .thumb .date { background-color: rgba(18, 19, 25, 0.9); }
+[data-tier="low"] .viewer { background: rgba(6, 7, 10, 0.985); }
+[data-tier="low"] .cookie-overlay { background: rgba(0, 0, 0, 0.86); }
+
+/* The light-wash and rim pseudo-elements double the boxes the compositor has
+   to blend on every card. On a slow device the tint alone reads as glass. */
+[data-tier="low"] .glass::after,
+[data-tier="low"] .form-shell::after,
+[data-tier="low"] .tier::after,
+[data-tier="low"] .empty-state::after,
+[data-tier="low"] .accordion::after,
+[data-tier="low"] .event-card::after,
+[data-tier="low"] .genre::after,
+[data-tier="low"] .artist::after { display: none; }
+
+/* Infinite animations that repaint rather than composite: a box-shadow keyframe
+   redraws its element every frame for as long as the page is open. */
+[data-tier="low"] .ticket-cta-outer,
+[data-tier="mid"] .ticket-cta-outer { animation: none; }
+[data-tier="low"] .marquee-track { animation-duration: 60s; }
+
+/* ---------- the pulsing dot, done as a transform ----------
+   It was an animated box-shadow, which is a repaint per frame. A pseudo-element
+   that scales and fades is the same picture composited on the GPU. */
+.pulse-dot { position: relative; box-shadow: none; animation: none; }
+.pulse-dot::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--accent); opacity: 0.7;
+  animation: pulse-scale 1.8s ease-out infinite;
+}
+@keyframes pulse-scale {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(3);   opacity: 0; }
+  100% { transform: scale(3);   opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .pulse-dot::after { display: none; } }
+
+
+/* ===========================================================
+   THE TOP BAR ON A PAGE WITH NO HERO
+
+   .nav is transparent until you scroll, which is right on the
+   front page: it sits over the hero and the blur has a
+   photograph to work on. Every other page has a flat dark
+   background behind it, so "frosted" had nothing to frost and
+   the bar read as not being there at all — measured on
+   work.html: background rgba(0,0,0,0), border-bottom
+   transparent, over a flat page.
+
+   A fill it can stand on. body.inner is on work, account,
+   tickets, staff and admin; index deliberately does not carry
+   it, so the hero is untouched.
+   =========================================================== */
+body.inner .nav {
+  background: rgba(10, 11, 15, 0.62);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  border-bottom-color: var(--line);
+}
+/* Once you have scrolled, the existing .nav.scrolled fill takes over and is
+   already stronger; this only has to hold the un-scrolled state. */

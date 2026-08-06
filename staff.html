@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>Staff · Slutstation</title>
+  <meta name="theme-color" content="#0a0b0f" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
+  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
+  <!-- Device tier, decided before the stylesheet so the first paint is already
+       the affordable one. Full rationale in index.html. -->
+  <script>
+    (function () {
+      var el = document.documentElement, n = navigator, c = n.connection || {};
+      var mem = n.deviceMemory || 0, cores = n.hardwareConcurrency || 0;
+      var tier = matchMedia("(pointer: coarse)").matches ? "mid" : "high";
+      if (mem && mem <= 4) tier = "low";
+      else if (mem && mem <= 6 && cores && cores <= 4) tier = "low";
+      if (c.saveData === true || /(^|-)(2g|slow-2g)$/.test(c.effectiveType || "")) tier = "low";
+      if (matchMedia("(prefers-reduced-transparency: reduce)").matches) tier = "low";
+      el.dataset.tier = tier;
+    })();
+  </script>
+  <link rel="stylesheet" crossorigin href="/styles.css">
+  <link rel="stylesheet" crossorigin href="/account.css">
+</head>
+<body class="no-announce inner">
+  <div class="hero-bg acc-bg" id="heroBg" aria-hidden="true">
+    <div class="hero-bg-blur"></div>
+    <div class="hero-bg-tint"></div>
+  </div>
+
+  <header class="nav scrolled" id="nav">
+    <a href="/account.html" class="nav-logo">
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" />
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="/account.html" data-i18n="nav.myaccount">My account</a>
+      <a href="/admin.html" id="navAdmin" hidden data-i18n="nav.admin">Admin</a>
+    </nav>
+    <div class="nav-cta">
+      <button class="btn btn-ghost btn-sm" id="signoutBtn" data-i18n="st.signout">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page ops-page">
+    <div class="wrap">
+
+      <section id="stateLoading">
+        <div class="form-shell acc-narrow acc-loading">
+          <span class="acc-spinner" aria-hidden="true"></span><p data-i18n="st.checking">Checking your shift…</p>
+        </div>
+      </section>
+
+      <!-- not on shift -->
+      <section id="stateNoShift" hidden>
+        <div class="form-shell acc-narrow" style="text-align:center;">
+          <h3 style="font-weight:600;font-size:1.2rem;" data-i18n="st.noShiftT">You're not on shift</h3>
+          <p style="color:var(--muted);margin-top:8px;" data-i18n="st.noShiftB">Door and bar access is granted per event and opens 4 hours before doors. If you're working tonight and this still says no, ask an admin to check your assignment.</p>
+          <div class="shift-list" id="upcomingShifts" hidden style="text-align:left;margin-top:22px;"></div>
+          <p style="margin-top:18px;"><a href="/account.html" class="btn btn-primary btn-sm" data-i18n="st.back">Back to my account</a></p>
+        </div>
+      </section>
+
+      <!-- on shift -->
+      <section id="stateShift" hidden>
+        <div class="ops-bar">
+          <div>
+            <h2 id="shiftEvent">, </h2>
+            <p class="ops-shift" id="shiftMeta"></p>
+          </div>
+          <div class="ops-actions">
+            <span class="tier-badge" id="shiftRole">, </span>
+            <button class="btn btn-ghost btn-sm" id="doorMode" hidden data-i18n="st.doorMode">Door mode</button>
+          </div>
+        </div>
+
+        <!-- Door mode. Sticks to the top of the screen once it is on, because
+             the answer is the only thing that matters when there is a queue. -->
+        <div class="door-hud" id="doorHud" hidden>
+          <div class="door-count"><b id="doorCount">0</b><small data-i18n="st.inSoFar">in so far</small></div>
+          <button class="btn btn-ghost btn-sm" id="doorExit" data-i18n="st.doorExit">Exit door mode</button>
+        </div>
+
+        <!-- DOOR: scanner -->
+        <div class="form-shell acc-panel" id="doorPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="st.scanT">Scan codes</h3>
+            <p data-i18n-html="st.scanL">Works for both: a <b>ticket</b> code (SS-…) admits one ticket, a <b>member</b> code counts them in. Each scans once.</p>
+          </div>
+          <video id="scanVideo" playsinline muted></video>
+          <div class="form-actions" style="justify-content:center;">
+            <button class="btn btn-primary btn-sm" id="scanStart" data-i18n="st.camOn">Start camera</button>
+            <button class="btn btn-ghost btn-sm" id="scanStop" hidden data-i18n="st.camOff">Stop</button>
+            <span class="form-msg" id="scanMsg"></span>
+          </div>
+          <div id="scanResult"></div>
+          <p class="acc-hint" id="queueNote" hidden></p>
+
+          <!-- Typing the code is the fallback when a screen is cracked, dark or
+               dead. The code is printed under every QR for exactly this. -->
+          <div class="form-grid" style="margin-top:22px;">
+            <div class="field full">
+              <label for="codeInput" data-i18n="st.typeLbl">Or type a ticket code</label>
+              <input id="codeInput" placeholder="SS-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              <small class="acc-hint" data-i18n="st.typeHint">Printed under the QR on their ticket.</small>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost btn-sm" id="codeBtn" data-i18n="st.check">Check code</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- lookup (door + bar) -->
+        <div class="form-shell acc-panel">
+          <div class="acc-card-head">
+            <h3 data-i18n="st.findT">Find a member</h3>
+            <p id="lookupHint" data-i18n="st.findL">For when a phone is dead or a code won't scan.</p>
+          </div>
+          <div class="form-grid">
+            <div class="field full">
+              <label for="lookupInput" data-i18n="st.searchLbl">Search by name</label>
+              <input id="lookupInput" placeholder="Start typing a name…" autocomplete="off" data-i18n-attr="placeholder:st.searchPh" />
+            </div>
+          </div>
+          <div class="form-actions" style="justify-content:space-between;">
+            <button type="button" class="btn btn-ghost btn-sm" id="offlineGet" data-i18n="st.offlineGet">Download the list for offline</button>
+            <span class="acc-hint" id="offlineNote"></span>
+          </div>
+          <div class="ops-list" id="lookupList"></div>
+        </div>
+
+        <!-- DOOR: tonight -->
+        <div class="form-shell acc-panel" id="tonightPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="st.inTonightT">Checked in tonight</h3>
+            <p data-i18n="st.inTonightL">Most recent first. Undo removes a check-in from this event only.</p>
+          </div>
+          <div class="ops-list" id="tonightList"></div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script type="module" src="/src/staff.js"></script>
+</body>
+</html>

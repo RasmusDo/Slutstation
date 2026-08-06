@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Account · Slutstation</title>
+  <meta name="description" content="Sign in to your Slutstation account to see your membership status." />
+  <meta name="theme-color" content="#0a0b0f" />
+  <meta name="robots" content="noindex" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+
+  <!-- The Supabase SDK comes from esm.sh at runtime; preconnecting and
+       preloading it here shaves the whole DNS+TLS+fetch chain off the time
+       before the page can check who you are. -->
+  <link rel="preconnect" href="https://esm.sh" crossorigin />
+  <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
+  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
+  <!-- Device tier, decided before the stylesheet so the first paint is already
+       the affordable one. Full rationale in index.html. -->
+  <script>
+    (function () {
+      var el = document.documentElement, n = navigator, c = n.connection || {};
+      var mem = n.deviceMemory || 0, cores = n.hardwareConcurrency || 0;
+      var tier = matchMedia("(pointer: coarse)").matches ? "mid" : "high";
+      if (mem && mem <= 4) tier = "low";
+      else if (mem && mem <= 6 && cores && cores <= 4) tier = "low";
+      if (c.saveData === true || /(^|-)(2g|slow-2g)$/.test(c.effectiveType || "")) tier = "low";
+      if (matchMedia("(prefers-reduced-transparency: reduce)").matches) tier = "low";
+      el.dataset.tier = tier;
+    })();
+  </script>
+  <link rel="stylesheet" crossorigin href="/styles.css">
+  <link rel="stylesheet" crossorigin href="/account.css">
+</head>
+<body class="inner">
+  <!-- ===================== ANNOUNCEMENT BAR ===================== -->
+  <div class="announce" id="announce">
+    <p>✦ <span class="full"><span data-i18n="announce.text">No upcoming events announced yet.</span>&nbsp;</span><a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" data-i18n="announce.link">Follow us on Instagram →</a></p>
+    <button class="x" id="announceX" aria-label="Dismiss" data-i18n-attr="aria-label:announce.dismiss">×</button>
+  </div>
+
+  <div class="grain"></div>
+  <div class="aura"></div>
+  <div class="aura aura-2"></div>
+  <div class="aura aura-3"></div>
+
+  <!-- ============ FIXED BACKDROP ============
+       Same fixed backdrop as the front page. There's no hero to scroll past
+       here, so --hb is pinned to 1 in account.css and only the blurred layer
+       shows — which is a 3KB still the build inlines into the stylesheet, so
+       this backdrop costs no request and no filter work at all. It used to be
+       the video's full-size poster with a 22px blur() run over it on every
+       paint, for a picture nobody can make out either way. -->
+  <div class="hero-bg acc-bg" id="heroBg" aria-hidden="true">
+    <div class="hero-bg-blur"></div>
+    <div class="hero-bg-tint"></div>
+  </div>
+
+  <!-- ===================== NAV ===================== -->
+  <header class="nav" id="nav">
+    <a href="/" class="nav-logo">
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation logo" />
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="/#events" data-i18n="nav.events">Events</a>
+      <a href="/#about" data-i18n="nav.about">About</a>
+      <a href="/tickets.html" data-i18n="nav.tickets">Tickets</a>
+      <a href="/#info" data-i18n="nav.info">Info</a>
+      <a href="/#contact" data-i18n="nav.contact">Contact</a>
+      <a href="/work.html" data-i18n="nav.work">Work with us</a>
+      <a href="/staff.html" id="navStaff" hidden data-i18n="nav.staff">Staff</a>
+      <a href="/admin.html" id="navAdmin" hidden data-i18n="nav.admin">Admin</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="/tickets.html" class="btn btn-primary btn-sm" data-i18n="nav.tickets">Tickets</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main class="page acc-page">
+    <div class="wrap">
+
+      <!-- ================= LOADING ================= -->
+      <section id="stateLoading">
+        <div class="form-shell acc-narrow acc-loading">
+          <span class="acc-spinner" aria-hidden="true"></span>
+          <p data-i18n="acct.loading">Loading your account…</p>
+        </div>
+      </section>
+
+      <!-- ================= SIGNED OUT ================= -->
+      <section id="stateAuth" hidden>
+        <div class="section-head" style="text-align:center; margin-inline:auto;">
+          <span class="eyebrow" style="justify-content:center;" data-i18n="acct.eyebrow">Members</span>
+          <h2 data-i18n="acct.title">Your account</h2>
+          <p style="margin-inline:auto;" data-i18n="acct.lead">Sign in to see your membership status, or create an account if you haven't yet.</p>
+        </div>
+
+        <div class="form-shell acc-narrow">
+          <div class="tabs acc-tabs" role="tablist">
+            <button class="tab active" data-pane="signin" role="tab" data-i18n="acct.signin">Sign in</button>
+            <button class="tab" data-pane="signup" role="tab" data-i18n="acct.signup">Create account</button>
+          </div>
+
+          <!-- ---------- SIGN IN ---------- -->
+          <form class="acc-pane active" id="signinForm" novalidate>
+            <div class="form-grid">
+              <div class="field full"><label for="f-account-email-0"><span data-i18n="acct.emailLbl">Email</span> <span class="req">*</span></label><input id="f-account-email-0" name="email" type="email" autocomplete="email" required /></div>
+              <div class="field full"><label for="f-account-password-1"><span data-i18n="acct.passwordLbl">Password</span> <span class="req">*</span></label><input id="f-account-password-1" name="password" type="password" autocomplete="current-password" required /></div>
+              <div class="field full" data-captcha="signin"></div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="acct.signin">Sign in</button>
+                <button type="button" class="acc-link" id="forgotBtn" data-i18n="acct.forgot">Forgot password?</button>
+                <button type="button" class="acc-link" id="resendBtn" data-i18n="acct.resend">Didn't get the confirmation email?</button>
+                <span class="form-msg" id="signinMsg" role="status"></span>
+              </div>
+            </div>
+          </form>
+
+          <!-- ---------- SIGN UP ---------- -->
+          <form class="acc-pane" id="signupForm" novalidate>
+            <p class="acc-note" data-i18n-html="acct.signupNote">Creating an account also registers you as a member of <strong>Kulturföreningen Musikbopp</strong>. Membership is free and runs to the end of the calendar year, everyone renews in January, whenever they joined.</p>
+            <div class="form-grid">
+              <div class="field"><label for="f-account-first-2"><span data-i18n="acct.first">First Name</span> <span class="req">*</span></label><input id="f-account-first-2" name="first" autocomplete="given-name" required /></div>
+              <div class="field"><label for="f-account-last-3"><span data-i18n="acct.last">Last Name</span> <span class="req">*</span></label><input id="f-account-last-3" name="last" autocomplete="family-name" required /></div>
+              <div class="field"><label for="f-account-email-4"><span data-i18n="acct.emailLbl">Email</span> <span class="req">*</span></label><input id="f-account-email-4" name="email" type="email" autocomplete="email" required /></div>
+              <div class="field"><label for="f-account-phone-5"><span data-i18n="acct.phone">Phone Number</span> <span class="req">*</span></label><input id="f-account-phone-5" name="phone" type="tel" autocomplete="tel" required /></div>
+              <div class="field"><label for="f-account-dob-6"><span data-i18n="acct.dob">Date of Birth</span> <span class="req">*</span></label><input id="f-account-dob-6" name="dob" type="date" required /></div>
+              <div class="field">
+                <label for="f-account-gender-7"><span data-i18n="acct.gender">Gender</span> <span class="req">*</span></label>
+                <select id="f-account-gender-7" name="gender" required>
+                  <option value="" data-i18n="acct.select">Select…</option>
+                  <option value="Female" data-i18n="acct.female">Female</option><option value="Male" data-i18n="acct.male">Male</option><option value="Non-binary" data-i18n="acct.nonbinary">Non-binary</option><option value="Prefer not to say" data-i18n="acct.nosay">Prefer not to say</option>
+                </select>
+              </div>
+              <div class="field"><label for="f-account-city-8"><span data-i18n="acct.city">City</span> <span class="req">*</span></label><input id="f-account-city-8" name="city" required value="Stockholm" autocomplete="address-level2" /></div>
+              <div class="field"><label for="f-account-street-9"><span data-i18n="acct.street">Street Address</span> <span class="req">*</span></label><input id="f-account-street-9" name="street" required autocomplete="street-address" /></div>
+              <div class="field"><label for="f-account-zip-10"><span data-i18n="acct.zip">Zip Code</span> <span class="req">*</span></label><input id="f-account-zip-10" name="zip" required autocomplete="postal-code" /></div>
+              <div class="field full">
+                <label for="f-account-password-11"><span data-i18n="acct.passwordLbl">Password</span> <span class="req">*</span></label>
+                <input id="f-account-password-11" name="password" type="password" autocomplete="new-password" minlength="8" required />
+                <small class="acc-hint" data-i18n="acct.pwHint">At least 8 characters. You'll use this to sign in.</small>
+              </div>
+
+              <!-- DJ application, moved here from the one-pager so there is a
+                   single signup form. Applying and joining are one step. -->
+              <div class="dj-toggle">
+                <div class="txt"><strong data-i18n="acct.djQ">Are you a DJ?</strong><small data-i18n-html="acct.djB">Want to play at our next event? Send us your info and a mix. Because of high demand we follow these requirements:<br />- Must be active on social media.<br />- Must have a somewhat established following.<br />- No open-format artists.</small></div>
+                <button type="button" class="switch" id="djSwitch" aria-pressed="false"></button>
+              </div>
+
+              <div class="dj-fields" id="djFields">
+                <div class="field"><label data-i18n="acct.artist" for="f-account-artist-12">Artist Name</label><input id="f-account-artist-12" name="artist" placeholder="Your stage name" data-i18n-attr="placeholder:acct.artistPh" /></div>
+                <div class="field"><label data-i18n="acct.style" for="f-account-genre-13">Your Style</label><input id="f-account-genre-13" name="genre" placeholder="The kind of sound you play" data-i18n-attr="placeholder:acct.stylePh" /></div>
+                <div class="field full"><label data-i18n="acct.mix" for="f-account-mix-14">Mix Link</label><input id="f-account-mix-14" name="mix" placeholder="SoundCloud, Mixcloud, or YouTube link" data-i18n-attr="placeholder:acct.mixPh" /></div>
+                <div class="field full"><label data-i18n="acct.aboutYou" for="f-account-about-15">About You</label><textarea id="f-account-about-15" name="about" placeholder="Tell us about yourself and your style..." data-i18n-attr="placeholder:acct.aboutPh"></textarea></div>
+                <div class="field full"><label data-i18n="acct.socials" for="f-account-socials-16">Socials</label><input id="f-account-socials-16" name="socials" placeholder="Instagram, SoundCloud, etc." data-i18n-attr="placeholder:acct.socialsPh" /></div>
+              </div>
+
+              <label class="checkbox">
+                <input type="checkbox" name="agree" required />
+                <span data-i18n-html="acct.agree">I want to register as a member of Slutstation and accept the <a href="/#info" style="color:var(--accent)">Bylaws &amp; Personal Data Handling Policy</a>. Membership is free and required to attend events.</span>
+              </label>
+              <label class="checkbox">
+                <input type="checkbox" name="newsletter" />
+                <span data-i18n="acct.newsletter">Email me about upcoming events. (Optional, you can change this any time.)</span>
+              </label>
+
+              <div class="field full" data-captcha="signup"></div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="acct.signup">Create account</button>
+                <span class="form-msg" id="signupMsg" role="status"></span>
+              </div>
+            </div>
+          </form>
+
+          <div class="acc-divider" id="googleWrap" hidden>
+            <span class="acc-divider-line" aria-hidden="true"></span>
+            <span class="acc-divider-word" data-i18n="acct.or">or</span>
+            <span class="acc-divider-line" aria-hidden="true"></span>
+          </div>
+          <div class="form-actions" id="googleActions" hidden style="justify-content:center;">
+            <button type="button" class="btn" id="googleBtn">
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+              <span data-i18n="acct.google">Continue with Google</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PASSWORD RECOVERY ================= -->
+      <section id="stateReset" hidden>
+        <div class="section-head" style="text-align:center; margin-inline:auto;">
+          <span class="eyebrow" style="justify-content:center;" data-i18n="acct.resetEyebrow">Reset</span>
+          <h2 data-i18n="acct.resetT">Choose a new password</h2>
+        </div>
+        <div class="form-shell acc-narrow">
+          <form id="resetForm" novalidate>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="f-account-password-17"><span data-i18n="acct.newPw">New password</span> <span class="req">*</span></label>
+                <input id="f-account-password-17" name="password" type="password" autocomplete="new-password" minlength="8" required />
+                <small class="acc-hint" data-i18n="acct.pwHint2">At least 8 characters.</small>
+              </div>
+              <div class="field full"><label for="f-account-confirm-18"><span data-i18n="acct.confirmPw">Confirm new password</span> <span class="req">*</span></label><input id="f-account-confirm-18" name="confirm" type="password" autocomplete="new-password" minlength="8" required /></div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="acct.updatePw">Update password</button>
+                <span class="form-msg" id="resetMsg" role="status"></span>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ================= SIGNED IN ================= -->
+      <section id="stateAccount" hidden>
+        <div class="acc-head">
+          <div>
+            <span class="eyebrow" data-i18n="acct.title">Your account</span>
+            <h2 id="greeting">Welcome back</h2>
+            <p class="acc-email" id="accEmail"></p>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="signoutBtn" data-i18n="acct.signout">Sign out</button>
+        </div>
+
+        <!-- ---------- NEEDS ATTENTION ----------
+             Only ever shown when something is genuinely missing; it names what,
+             and the button opens and focuses the field rather than just
+             scrolling near it. Hidden by default so a complete account never
+             sees a slot where a warning might one day go. -->
+        <div class="acc-attention" id="detailsAlert" role="status" hidden>
+          <span class="acc-attention-mark" aria-hidden="true">!</span>
+          <div class="acc-attention-text">
+            <strong data-i18n="acct.attentionT">Your details need finishing</strong>
+            <p id="detailsAlertBody"></p>
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" id="detailsAlertBtn"
+                  data-i18n="acct.attentionCta">Fill them in</button>
+        </div>
+
+        <!-- ---------- MEMBERSHIP ---------- -->
+        <div class="form-shell acc-panel membership" id="membershipCard">
+          <div class="membership-main">
+            <span class="status-badge" id="statusIcon" aria-hidden="true"></span>
+            <div class="membership-text">
+              <h3 id="statusTitle">Checking membership…</h3>
+              <p id="statusDetail">Asking eBas about your membership.</p>
+            </div>
+          </div>
+          <div class="membership-actions">
+            <button class="btn btn-ghost btn-sm" id="verifyBtn" data-i18n="acct.recheck">Re-check</button>
+            <button class="btn btn-primary btn-sm" id="joinBtn" hidden data-i18n="acct.register">Register membership</button>
+          </div>
+        </div>
+
+        <!-- ---------- YOUR STATS ---------- -->
+        <div class="form-shell acc-panel">
+          <div class="acc-card-head">
+            <h3 data-i18n="acct.tierTitle">Your tier</h3>
+            <p data-i18n="acct.tierLead">Earned by turning up. Counted over the last 24 months.</p>
+          </div>
+
+          <div class="tier-head">
+            <span class="tier-badge" id="tierBadge">Tier 1</span>
+            <span class="tier-next" id="tierNext"></span>
+          </div>
+          <div class="tier-bar"><span id="tierFill"></span></div>
+          <div class="tier-scale" id="tierScale"></div>
+
+          <!-- The ladder exists and the counting is real; what each rung
+               unlocks is not decided yet, and promising something at the door
+               that nobody has agreed to honour is worse than promising
+               nothing. So the rungs are shown and the rewards are not. -->
+          <p class="tier-ladder-lead" data-i18n="tier.lead">What each tier unlocks is still being decided. Your count is already running, so nothing you turn up to now is wasted.</p>
+          <ol class="tier-ladder" id="tierLadder">
+            <li><b>Tier 1</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
+            <li><b>Tier 2</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
+            <li><b>Tier 3</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
+            <li><b>Tier 4</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
+          </ol>
+
+          <div class="stat-grid">
+            <div class="stat"><b id="statWindow">0</b><small data-i18n="acct.statWindow">events, last 24 months</small></div>
+            <div class="stat"><b id="statTotal">0</b><small data-i18n="acct.statTotal">events all time</small></div>
+            <div class="stat"><b id="statFirst">, </b><small data-i18n="acct.statFirst">first event</small></div>
+            <div class="stat"><b id="statLast">, </b><small data-i18n="acct.statLast">last event</small></div>
+          </div>
+
+          <div class="refer" id="referWrap" hidden>
+            <div class="refer-text">
+              <strong data-i18n="acct.refTitle">Your invite code</strong>
+              <small data-i18n="acct.refLead">Give it to someone worth having here. We can see who you brought.</small>
+            </div>
+            <div class="refer-code">
+              <code id="refCode"></code>
+              <button type="button" class="btn btn-ghost btn-sm" id="refCopy" data-i18n="acct.refCopy">Copy</button>
+            </div>
+            <small class="acc-hint" id="refStats"></small>
+          </div>
+        </div>
+
+        <!-- ---------- WHEN YOU WORK ----------
+             Everyone with a tag sees this, volunteers included. my_shift()
+             answers "can I open the staff page"; this answers "when am I next
+             working", which is the question people actually have. -->
+        <div class="form-shell acc-panel" id="shiftsPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="shift.title">When you work</h3>
+            <p data-i18n="shift.lead">Your tag opens the staff page 4 hours before doors and closes 6 hours after the event ends. Nothing to remember, nothing to hand back.</p>
+          </div>
+          <div class="shift-list" id="shiftList"></div>
+        </div>
+
+        <!-- ---------- YOUR CODE ---------- -->
+        <div class="form-shell acc-panel" id="creatorPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="promo.title">Your code</h3>
+            <p data-i18n="promo.lead">Someone counts when they sign up with your code and then turns up to a night. Signing up alone is not enough, which is why the two numbers are different.</p>
+          </div>
+          <div id="promoBody"></div>
+        </div>
+
+        <!-- ---------- YOUR NIGHTS ----------
+             Hidden until they have been to something. The database has known
+             this the whole time and the page has never said it. -->
+        <div class="form-shell acc-panel" id="historyPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="acct.histTitle">Your nights</h3>
+            <p id="histLead"></p>
+          </div>
+          <ol class="hist-list" id="histList"></ol>
+          <p class="acc-hint" id="histMore" hidden data-i18n="acct.histMore">Older nights are counted but not listed.</p>
+        </div>
+
+        <!-- ---------- TICKETS ----------
+             Hidden until they hold one, so the page doesn't carry an empty
+             panel around for members who haven't bought yet. -->
+        <div class="form-shell acc-panel" id="ticketsPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="acct.ticketsT">Your tickets</h3>
+            <p data-i18n="acct.ticketsL">Show the QR at the door. Each one scans once.</p>
+          </div>
+          <div class="tk-cards" id="ticketCards"></div>
+        </div>
+
+        <!-- ---------- ENTRY QR ---------- -->
+        <div class="form-shell acc-panel qr-panel" id="qrPanel" hidden>
+          <div class="acc-card-head">
+            <h3 data-i18n="acct.qrTitle">Your entry code</h3>
+            <p data-i18n="acct.qrLead">Show this at the door. Scanning it records your attendance and moves your tier.</p>
+          </div>
+          <div class="qr-wrap"><canvas id="memberQr" width="220" height="220"></canvas></div>
+          <p style="text-align:center;margin-top:6px;">
+            <button type="button" class="btn btn-ghost btn-sm" id="qrSave" data-i18n="acct.qrSave">Save it to my photos</button>
+          </p>
+          <p class="acc-hint" style="text-align:center;" data-i18n="acct.qrOffline">Works offline once the page has loaded.</p>
+        </div>
+
+        <!-- ---------- DETAILS ---------- -->
+        <div class="form-shell acc-panel acc-fold" id="detailsFold" data-open="true">
+          <!-- A button, not a div with a click handler: this is a disclosure
+               control, so it has to be reachable by keyboard and has to say
+               what it does to a screen reader. aria-expanded is kept in step
+               with data-open by the same function that opens it. -->
+          <button type="button" class="acc-fold-head" id="detailsToggle"
+                  aria-expanded="true" aria-controls="detailsBody">
+            <span class="acc-fold-title">
+              <span class="acc-fold-line">
+                <h3 data-i18n="acct.detailsT">Your details</h3>
+                <span class="acc-chip" id="detailsChip" hidden></span>
+              </span>
+              <p data-i18n="acct.detailsL">Kept in sync with your membership in eBas.</p>
+            </span>
+            <span class="acc-fold-caret" aria-hidden="true"></span>
+          </button>
+          <div class="acc-fold-body" id="detailsBody">
+           <div class="acc-fold-inner">
+          <form id="detailsForm" novalidate>
+            <div class="acc-callout" id="finishJoin" hidden data-i18n="acct.finishJoin">You're signed in. Add your date of birth and address, then save to send your free membership application.</div>
+            <div class="form-grid">
+              <div class="field"><label data-i18n="acct.first" for="d-first">First Name</label><input id="d-first" /></div>
+              <div class="field"><label data-i18n="acct.last" for="d-last">Last Name</label><input id="d-last" /></div>
+              <div class="field"><label data-i18n="acct.phone" for="d-phone">Phone Number</label><input id="d-phone" type="tel" /></div>
+              <div class="field"><label data-i18n="acct.dob" for="d-dob">Date of Birth</label><input id="d-dob" type="date" /></div>
+              <div class="field">
+                <label data-i18n="acct.gender" for="d-gender">Gender</label>
+                <select id="d-gender">
+                  <option value="" data-i18n="acct.genderNone">Prefer not to say</option>
+                  <option value="1" data-i18n="acct.genderF">Female</option>
+                  <option value="2" data-i18n="acct.genderM">Male</option>
+                  <option value="3" data-i18n="acct.genderX">Non-binary / other</option>
+                </select>
+              </div>
+              <div class="field"><label data-i18n="acct.street" for="d-street">Street Address</label><input id="d-street" /></div>
+              <div class="field"><label data-i18n="acct.zip" for="d-zip">Zip Code</label><input id="d-zip" /></div>
+              <div class="field"><label data-i18n="acct.city" for="d-city">City</label><input id="d-city" /></div>
+              <div class="field">
+                <label data-i18n="acct.email" for="d-email">Email</label>
+                <input id="d-email" type="email" disabled />
+                <small class="acc-hint" data-i18n="acct.emailLock">Contact info@slutstation.se to change this.</small>
+              </div>
+
+              <label class="checkbox">
+                <input type="checkbox" id="d-newsletter" />
+                <span data-i18n="acct.notifyEvents">New events, when they are announced.</span>
+              </label>
+
+              <label class="checkbox">
+                <input type="checkbox" id="d-lastminute" />
+                <span data-i18n="acct.notifyLast">Last-minute tickets, on the day itself.</span>
+              </label>
+
+              <label class="checkbox" id="dTermsWrap" hidden>
+                <input type="checkbox" id="d-terms" />
+                <span data-i18n-html="acct.agree">I want to register as a member of Slutstation and accept the <a href="/#info" style="color:var(--accent)">Bylaws &amp; Personal Data Handling Policy</a>. Membership is free and required to attend events.</span>
+              </label>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-sm" data-i18n="acct.save">Save changes</button>
+                <button type="button" class="acc-link" id="changePwBtn" data-i18n="acct.changePw">Change password</button>
+                <span class="form-msg" id="detailsMsg" role="status"></span>
+              </div>
+            </div>
+          </form>
+           </div>
+          </div>
+        </div>
+
+        <!-- ---------- COMING SOON ---------- -->
+        <div class="form-shell acc-panel acc-soon">
+          <div class="acc-card-head">
+            <h3 data-i18n="acct.soonT">Coming soon</h3>
+            <p data-i18n="acct.soonL">What lands on this page next. Roughly in the order we're building it.</p>
+          </div>
+          <ul class="acc-soon-list">
+            <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon1T">Tier rewards</strong><small data-i18n="acct.soon1B">Right now your tier is a number. Next it unlocks things, early access to releases, cheaper wardrobe, and tickets that never reach the public.</small></div></li>
+            <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon2T">Account balance</strong><small data-i18n="acct.soon2B">Top up once and spend it on tickets, at the bar and on merch. Usable with us only, and never withdrawable as cash.</small></div></li>
+            <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon3T">Premium membership</strong><small data-i18n="acct.soon3B">A paid tier on top of the free one, free wardrobe every event, priority entry, and a discount that pays for itself in two nights.</small></div></li>
+            <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon4T">Referral codes</strong><small data-i18n="acct.soon4B">Your own code to send friends. They get something off their first ticket, you get credit when they turn up.</small></div></li>
+            <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon5T">Passing on a ticket</strong><small data-i18n="acct.soon5B">Can't make it? Hand your ticket to another member from this page instead of emailing us.</small></div></li>
+          </ul>
+          <p class="acc-hint" style="margin-top:20px;" data-i18n-html="acct.soonAsk">Want something that isn't on this list? Tell us, <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.</p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer" id="contact">
+    <div class="wrap">
+      <div class="contact-top">
+        <div>
+          <span class="eyebrow" data-i18n="contact.eyebrow">Contact</span>
+          <h2 style="margin-top:20px;"><span data-i18n-html="contact.title">Got questions or<br />want to get involved?<br /></span><a href="mailto:info@slutstation.se">info@slutstation.se</a></h2>
+        </div>
+        <div class="contact-cols">
+          <div class="col">
+            <h5 data-i18n="contact.reach">Reach us</h5>
+            <a href="mailto:info@slutstation.se">info@slutstation.se</a>
+            <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener">@slutstation.sthlm</a>
+            <a href="https://www.tiktok.com/@slutstationsthlm" target="_blank" rel="noopener">TikTok</a>
+          </div>
+          <div class="col">
+            <h5 data-i18n="contact.member">Membership</h5>
+            <a href="/#apply" data-i18n="contact.apply">Apply for access</a>
+            <a href="/account.html" data-i18n="contact.account">Your account</a>
+            <a href="/#info" data-i18n="contact.bylaws">Bylaws &amp; privacy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" />
+        <span class="copy">© 2024–2026 Slutstation · Underground House Music · Stockholm</span>
+        <div class="socials">
+          <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
+          <a href="https://www.tiktok.com/@slutstationsthlm" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
+          <a href="mailto:info@slutstation.se" aria-label="Email">✉</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+  <script type="module" src="/src/account.js"></script>
+</body>
+</html>

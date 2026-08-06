@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slutstation · Underground House Music · Stockholm</title>
+  <meta name="description" content="Slutstation, an underground house music collective in Stockholm. Est. 2024." />
+  <meta name="theme-color" content="#0a0b0f" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+
+  <!-- Open Graph / social share -->
+  <meta property="og:title" content="Slutstation, Underground House Music · Stockholm" />
+  <meta property="og:description" content="Underground house events in Stockholm. Event experiences." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.slutstation.se/" />
+  <meta property="og:image" content="assets/night-01.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- ============================================================
+       TRACKING / MARKETING PIXELS
+       Drop your IDs in below and UNCOMMENT the block to activate.
+       Each is self-contained; enable only the ones you use.
+       ============================================================ -->
+
+  <!-- Google Tag Manager (preferred: manage GA4, Meta, TikTok, etc. from one container)
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+  -->
+
+  <!-- Google Analytics 4 (gtag.js)
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXXXX');</script>
+  -->
+
+ <!-- ===================== Meta Pixel (consent-gated) ===================== -->
+
+<!-- End Meta Pixel -->
+
+  <!-- TikTok Pixel
+  <script>!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"];ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{};ttq._i[e]=[];ttq._i[e]._u=i;ttq._t=ttq._t||{};ttq._t[e]=+new Date;ttq._o=ttq._o||{};ttq._o[e]=n||{};var o=d.createElement("script");o.type="text/javascript";o.async=!0;o.src=i+"?sdkid="+e+"&lib="+t;var a=d.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};ttq.load('TIKTOK_PIXEL_ID');ttq.page();}(window,document,'ttq');</script>
+  -->
+
+  <!-- Talk to Supabase for the event cards; open the connection while the
+       visitor is still looking at the hero. -->
+  <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
+
+  <!-- ============================================================
+       DEVICE TIER
+
+       Decided here, inline and before the stylesheet, because the
+       answer changes what the first paint costs. Every glass
+       surface is a backdrop pass, and a page of them over a
+       playing video is the difference between 60fps and a
+       slideshow on a four-year-old phone. Painting the expensive
+       version and then tearing it back down from a module would
+       be worse than never painting it.
+
+       Deliberately NOT keyed on core count alone: iPhones report
+       four cores and are faster than most eight-core Androids.
+       deviceMemory is the honest signal (Chromium-only, which is
+       where the heavy effects live anyway), pointer:coarse stands
+       in for "battery and a mobile GPU", and Save-Data is the
+       visitor telling us outright.
+       ============================================================ -->
+  <script>
+    (function () {
+      var el = document.documentElement, n = navigator, c = n.connection || {};
+      var mem = n.deviceMemory || 0, cores = n.hardwareConcurrency || 0;
+      var coarse = matchMedia("(pointer: coarse)").matches;
+      var tier = coarse ? "mid" : "high";
+      if (mem && mem <= 4) tier = "low";
+      else if (mem && mem <= 6 && cores && cores <= 4) tier = "low";
+      if (c.saveData === true || /(^|-)(2g|slow-2g)$/.test(c.effectiveType || "")) tier = "low";
+      if (matchMedia("(prefers-reduced-transparency: reduce)").matches) tier = "low";
+      el.dataset.tier = tier;
+    })();
+  </script>
+  <link rel="stylesheet" crossorigin href="/styles.css">
+</head>
+<body>
+  <!-- ===================== ANNOUNCEMENT BAR ===================== -->
+  <div class="announce" id="announce">
+    <p>✦ <span class="full"><span data-i18n="announce.text">No upcoming events announced yet.</span>&nbsp;</span><a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" data-i18n="announce.link">Follow us on Instagram →</a></p>
+    <button class="x" id="announceX" aria-label="Dismiss" data-i18n-attr="aria-label:announce.dismiss">×</button>
+  </div>
+
+  <div class="grain"></div>
+  <div class="aura"></div>
+  <div class="aura aura-2"></div>
+  <div class="aura aura-3"></div>
+
+  <!-- ============ FIXED HERO BACKGROUND ============
+       Three stacked layers, and the order matters:
+
+         video   the sharp frame, attached by main.js after the
+                 first paint. No `src` and no `autoplay` here on
+                 purpose: with them, the browser starts pulling
+                 megabytes of video before it has laid out a single
+                 word, and the poster is what people actually see
+                 first anyway.
+         blur    a pre-blurred still, cross-faded in by opacity as
+                 you scroll. This used to be a blur() filter on the
+                 video itself, which meant re-blurring 1080p at 25
+                 frames a second for as long as the page was open.
+         tint    the fixed gradient, unchanged.
+
+       Everything that moves during a scroll is now opacity, which
+       the compositor does on the GPU without repainting anything.
+       ============================================================ -->
+  <div class="hero-bg" id="heroBg" aria-hidden="true">
+    <video
+      class="hero-bg-video" id="heroVideo"
+      muted loop playsinline preload="none"
+      poster="assets/hero-poster-1280.jpg"></video>
+    <div class="hero-bg-blur"></div>
+    <div class="hero-bg-tint"></div>
+  </div>
+
+  <!-- ===================== NAV ===================== -->
+  <header class="nav" id="nav">
+    <a href="#home" class="nav-logo">
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation logo" width="1500" height="409" decoding="async" />
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#events" data-i18n="nav.events">Events</a>
+      <a href="#about" data-i18n="nav.about">About</a>
+      <a href="#apply" data-i18n="nav.membership">Membership</a>
+      <a href="#info" data-i18n="nav.info">Info</a>
+      <a href="#contact" data-i18n="nav.contact">Contact</a>
+      <a href="/work.html" data-i18n="nav.work">Work with us</a>
+      <a href="/account.html" data-i18n="nav.account">Account</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="/tickets.html" class="btn btn-primary btn-sm" data-i18n="nav.tickets">Tickets</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" id="home">
+    <div class="hero-inner">
+      <span class="hero-badge"><span class="dot"></span> <span data-i18n="hero.badge">Est. 2024 · Stockholm</span></span>
+      <h1 class="hero-logo">
+        <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" width="1500" height="409" fetchpriority="high" decoding="async" />
+        <span class="visually-hidden">Slutstation</span>
+      </h1>
+      <p class="hero-tagline" data-i18n-html="hero.tagline"><b>Experience underground house music.</b> Access the inaccessible, high production events found no where else in Stockholm.</p>
+      <div class="hero-actions">
+        <a href="#apply" class="btn btn-primary" data-i18n="hero.join">Become a member</a>
+        <a href="#events" class="btn btn-ghost" data-i18n="hero.next">Next event →</a>
+      </div>
+    </div>
+    <div class="scroll-cue"><span class="line"></span> <span data-i18n="hero.scroll">Scroll to enter</span></div>
+  </section>
+
+  <!-- ===================== PAGE BODY (scrolls over video) ===================== -->
+  <main class="page">
+
+  <!-- ===================== EVENTS ===================== -->
+  <section class="section-pad wrap" id="events">
+    <div class="section-head reveal">
+      <span class="eyebrow" data-i18n="events.eyebrow">Events</span>
+      <h2 data-i18n="events.title">Events</h2>
+      <p data-i18n="events.lead">Access to our events is strictly for members. We announce our events on Instagram, stay tuned.</p>
+    </div>
+
+    <!-- tabs -->
+    <div class="tabs reveal" role="tablist">
+      <button class="tab active" data-tab="upcoming" data-i18n="events.upcoming">Upcoming</button>
+      <button class="tab" data-tab="past" data-i18n="events.past">Past Events</button>
+    </div>
+
+    <!-- Upcoming. The cards are drawn by main.js from whatever is actually on
+         sale, so publishing a release in the admin panel puts the event here
+         with no code change. The empty state below is the fallback. -->
+    <div class="reveal" id="upcomingGrid">
+      <div class="event-grid" id="upcomingCards" hidden></div>
+      <div class="empty-state" id="upcomingEmpty">
+
+
+        <h3 data-i18n="events.none">The next one is being built</h3>
+        <p data-i18n-html="events.noneBody">Members hear first, and our events sell out before they reach anyone else.<br>Joining is free and takes a minute.</p>
+        <div class="empty-actions">
+          <a href="/account.html" class="btn btn-primary btn-sm" data-i18n="events.join">Become a member</a>
+          <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" class="btn btn-sm">
+            <span data-i18n="events.follow">Follow on Instagram</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- past events, the real Slutstation events (newest first).
+         Billetto ticket links open the Billetto widget (widget.js, loaded below). -->
+    <div class="event-grid reveal" id="pastGrid" style="display:none;">
+      <article class="event-card past" data-night="grooves">
+        <div class="thumb"><img src="assets/festival-crowd-400.jpg" srcset="assets/festival-crowd-400.jpg 400w, assets/festival-crowd-full.jpg 640w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 362px" width="640" height="1024" alt="Slutstation · Midnight Grooves" loading="lazy" decoding="async" /><div class="date"><div class="d">25</div><div class="m">July ’26</div></div></div>
+        <div class="info">
+          <h4>Midnight Grooves</h4>
+          <div class="loc">◷ Secret Location, Stockholm · 25–26 July 2026 · 22:00–05:00</div>
+          <p class="ev-desc">Secret forest event with high production. 18+.</p>
+        </div>
+      </article>
+      <article class="event-card past" data-night="sunset">
+        <div class="thumb"><img src="assets/ev-sunset-400.jpg" srcset="assets/ev-sunset-400.jpg 400w, assets/ev-sunset-800.jpg 800w, assets/ev-sunset-full.jpg 1066w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 362px" width="1066" height="1600" alt="Slutstation · Sunset Sessions at Kägelbanan" loading="lazy" decoding="async" /><div class="date"><div class="d">30</div><div class="m">May ’26</div></div></div>
+        <div class="info">
+          <h4>Sunset Sessions</h4>
+          <div class="loc">◷ Kägelbanan, Stockholm · 30–31 May 2026 · 21:00–03:00</div>
+          <p class="ev-desc">Our best lineup to date, strictly real Tech-House. 18+.</p>
+        </div>
+      </article>
+      <article class="event-card past" data-night="techhouse">
+        <div class="thumb"><img src="assets/ev-techhouse-400.jpg" srcset="assets/ev-techhouse-400.jpg 400w, assets/ev-techhouse-800.jpg 800w, assets/ev-techhouse-full.jpg 1066w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 362px" width="1066" height="1600" alt="Slutstation · Tech House Night at Mister French" loading="lazy" decoding="async" /><div class="date"><div class="d">28</div><div class="m">Feb ’26</div></div></div>
+        <div class="info">
+          <h4>Tech House Night</h4>
+          <div class="loc">◷ Mister French · Tullhus 2, Stockholm · 28 Feb–1 Mar 2026 · 22:00–03:00</div>
+          <p class="ev-desc">A night of raw, hypnotic tech house with Tomi &amp; Kesh, made for big sound systems.</p>
+        </div>
+      </article>
+      <article class="event-card past" data-night="lastpath">
+        <div class="thumb"><img src="assets/ev-lastpath-400.jpg" srcset="assets/ev-lastpath-400.jpg 400w, assets/ev-lastpath-800.jpg 800w, assets/ev-lastpath-full.jpg 1066w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 362px" width="1066" height="1600" alt="Slutstation · Last Path at Hellasgården" loading="lazy" decoding="async" /><div class="date"><div class="d">13</div><div class="m">Sep ’25</div></div></div>
+        <div class="info">
+          <h4>Last Path</h4>
+          <div class="loc">◷ Hellasgården, Stockholm · 13–14 Sep 2025 · 22:00–05:00</div>
+          <p class="ev-desc">An open-air session in the forest at Hellasgården. The last open air of the season.</p>
+        </div>
+      </article>
+      <article class="event-card past" data-night="outdoors">
+        <div class="thumb"><img src="assets/ev-outdoors-400.jpg" srcset="assets/ev-outdoors-400.jpg 400w, assets/ev-outdoors-full.jpg 739w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 362px" width="739" height="1600" alt="Slutstation Outdoors at Kärsön" loading="lazy" decoding="async" /><div class="date"><div class="d">24</div><div class="m">May ’25</div></div></div>
+        <div class="info">
+          <h4>Slutstation Outdoors</h4>
+          <div class="loc">◷ Kärsön, Stockholm · 24–25 May 2025 · 23:00–06:00</div>
+          <p class="ev-desc">An open-air all-nighter on Kärsön, outdoors, under the trees, till sunrise.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===================== ABOUT ===================== -->
+  <section class="sound section-pad" id="about">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow" data-i18n="about.eyebrow">About</span>
+        <h2 data-i18n-html="about.title">Not quite club, <span class="lead-serif">not quite rave</span></h2>
+      </div>
+      <div class="about-grid reveal">
+        <p data-i18n="about.p1">Slutstation is an independent nightlife collective dedicated to underground music, custom scenography, and community-driven events. Combined with meticulous sound design, carefully selected underground artists, and unique outdoor settings, we create immersive spaces built entirely around connection through music and art.</p>
+        <p data-i18n="about.p2">Operating on a non-profit basis, our mission is to curate uncompromising sonic and visual experiences that offer a genuine alternative to commercial nightlife. We build our own custom scenography from scratch for every single event, ensuring that no two nights ever look or feel the same.</p>
+        <p data-i18n="about.p3">We prioritize quality over frequency, keeping every event intentional, rare, and memorable.</p>
+        <p data-i18n="about.p4">We are not trying to fix the existing club scene. We are building what comes after.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== APPLY (membership sign-up) ===================== -->
+  <section class="apply section-pad wrap" id="apply">
+    <div class="section-head reveal" style="text-align:center; margin-inline:auto;">
+      <span class="eyebrow" style="justify-content:center;" data-i18n="apply.eyebrow">Apply for Access</span>
+      <h2 data-i18n="apply.title">Become a member</h2>
+      <p style="margin-inline:auto;" data-i18n="apply.lead">Join kulturföreningen and create your Slutstation account in one step. Membership is free and required to attend our outdoor events.</p>
+    </div>
+
+    <div class="form-shell reveal" style="max-width:660px;text-align:center;">
+      <p style="color:var(--muted);font-size:1.02rem;line-height:1.55;" data-i18n-html="apply.note">Membership is free and runs to the end of the calendar year, everyone renews in January, whenever they joined. Creating your account registers you with
+        <strong style="color:var(--ink)">Kulturföreningen Musikbopp</strong>, gives you a tier that
+        grows every time you come, and an entry code for the door.</p>
+      <div class="form-actions" style="justify-content:center;margin-top:26px;">
+        <a href="/account.html" class="btn btn-primary" data-i18n="apply.cta">Become a member</a>
+        <a href="/account.html" class="btn btn-ghost" data-i18n="apply.have">I already have an account</a>
+      </div>
+      <p style="color:var(--faint);font-size:.84rem;margin-top:18px;">
+        <span data-i18n="apply.dj">DJ? There's a toggle on the signup form, apply while you join.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== GALLERY ===================== -->
+  <section class="section-pad wrap" id="gallery">
+    <div class="section-head reveal">
+      <span class="eyebrow" data-i18n="gallery.eyebrow">Gallery</span>
+      <h2 data-i18n="gallery.title">Inside the night</h2>
+    </div>
+    <!-- Add data-night="<key>" to a figure to attach it to a past event, using
+         the same key as that event card's data-night. The card then opens the
+         viewer on that night's photos instead of just its own. Keys in use:
+         grooves, sunset, techhouse, lastpath, outdoors. -->
+    <!-- Every photo ships in three sizes. A 1200px-wide JPEG in a 366px
+         column is three quarters of a megabyte the visitor never sees, and
+         nine of them was most of the page weight. `sizes` tells the browser
+         how wide the slot really is at each breakpoint so it can pick before
+         it downloads; `data-full` keeps the original in reserve for the
+         full-screen viewer, which is the one place the detail is worth it. -->
+    <div class="gallery-grid reveal">
+      <figure><img src="assets/ev-sunset-400.jpg" srcset="assets/ev-sunset-400.jpg 400w, assets/ev-sunset-800.jpg 800w, assets/ev-sunset-full.jpg 1066w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="1066" height="1600" alt="Slutstation · crowd under red lasers" loading="lazy" decoding="async" /></figure>
+      <figure><img src="assets/DSC00940_small-C1WlmvaZ-400.jpg" srcset="assets/DSC00940_small-C1WlmvaZ-400.jpg 400w, assets/DSC00940_small-C1WlmvaZ-800.jpg 800w, assets/DSC00940_small-C1WlmvaZ-full.jpg 1200w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="1200" height="1800" alt="Slutstation · packed dancefloor" loading="lazy" decoding="async" /></figure>
+      <figure><img src="assets/night-01-400.jpg" srcset="assets/night-01-400.jpg 400w, assets/night-01-800.jpg 800w, assets/night-01-full.jpg 1066w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="1066" height="1600" alt="Slutstation · festival crowd under the tent" loading="lazy" decoding="async" /></figure>
+      <figure><img src="assets/DSC01322_small-Cu8GUxwZ-400.jpg" srcset="assets/DSC01322_small-Cu8GUxwZ-400.jpg 400w, assets/DSC01322_small-Cu8GUxwZ-800.jpg 800w, assets/DSC01322_small-Cu8GUxwZ-full.jpg 1200w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="1200" height="1800" alt="Slutstation · crowd, hands up" loading="lazy" decoding="async" /></figure>
+      <figure data-night="sunset"><img src="assets/kagel-decor-400.jpg" srcset="assets/kagel-decor-400.jpg 400w, assets/kagel-decor-800.jpg 800w, assets/kagel-decor-full.jpg 900w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="900" height="1041" alt="Slutstation · stage decor and lighting at Kägelbanan" loading="lazy" decoding="async" /></figure>
+      <figure><img src="assets/DSC01264_small-XlQcL0pj-400.jpg" srcset="assets/DSC01264_small-XlQcL0pj-400.jpg 400w, assets/DSC01264_small-XlQcL0pj-800.jpg 800w, assets/DSC01264_small-XlQcL0pj-full.jpg 1200w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="1200" height="1800" alt="Slutstation · crowd and logo" loading="lazy" decoding="async" /></figure>
+      <figure><img src="assets/festival-crowd-400.jpg" srcset="assets/festival-crowd-400.jpg 400w, assets/festival-crowd-full.jpg 640w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="640" height="1024" alt="Slutstation · DJ at Mister French" loading="lazy" decoding="async" /></figure>
+      <figure data-night="outdoors"><img src="assets/outdoors-rig-400.jpg" srcset="assets/outdoors-rig-400.jpg 400w, assets/outdoors-rig-full.jpg 639w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="639" height="1024" alt="Slutstation · open-air lighting rig at Kärsön" loading="lazy" decoding="async" /></figure>
+      <figure><img src="assets/dj-night-red-400.jpg" srcset="assets/dj-night-red-400.jpg 400w, assets/dj-night-red-full.jpg 640w" sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 900px) calc(50vw - 33px), 366px" width="640" height="1024" alt="Slutstation · DJs at night" loading="lazy" decoding="async" /></figure>
+    </div>
+  </section>
+
+  <!-- ===================== INFO / RULES ===================== -->
+  <section class="section-pad wrap" id="info">
+    <div class="section-head reveal">
+      <span class="eyebrow" data-i18n="info.eyebrow">Info</span>
+      <h2 data-i18n="info.title">Good to know</h2>
+    </div>
+    <div class="info-grid">
+      <div class="rules reveal">
+        <div class="rule"><div class="n">01</div><div><h4 data-i18n="info.rule1t">Quality over quantity</h4><p data-i18n="info.rule1b">We don't do quantity, we do quality. Every event is built from scratch, we don't throw parties just for the sake of it.</p></div></div>
+        <div class="rule"><div class="n">02</div><div><h4 data-i18n="info.rule2t">Aligned with our culture</h4><p data-i18n="info.rule2b">Becoming a member means you're aligned with our culture and values, a nightlife built on sound, trust, and something real.</p></div></div>
+      </div>
+
+      <div class="reveal">
+        <div class="accordion">
+          <div class="acc-item">
+            <button class="acc-head"><span data-i18n="acc.member.q">What does it mean to become a member?</span> <span class="plus">+</span></button>
+            <div class="acc-body"><div class="inner"><p data-i18n-html="acc.member.a">Becoming a member means you're aligned with our culture and values. Membership gives you access to buy tickets to our events. It's free, always will be, and runs to the end of the calendar year. Join in August and you're a member until 1 January; everyone renews in January, whenever they joined. When you sign up you'll get a confirmation email, click the link in it to activate your account, and your membership is registered in eBas automatically. You can see your membership status and your tier any time at <a href="/account.html" style="color:var(--accent)">your account</a>. If any uncertainty arises, please contact us at <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.</p></div></div>
+          </div>
+          <div class="acc-item">
+            <button class="acc-head"><span data-i18n="acc.events.q">About our events</span> <span class="plus">+</span></button>
+            <div class="acc-body"><div class="inner"><p data-i18n-html="acc.events.a">Every event is different. We announce and share information about our events via Instagram. Outdoor events location are only revealed to members with tickets before the event. Buying a ticket means agreeing to our <a href="#info" style="color:var(--accent)">Köpvillkor / Ticket purchase terms</a>, and attending means agreeing to our <a href="#info" style="color:var(--accent)">Ordningsregler / Event terms &amp; conduct</a>. Stay tuned!</p></div></div>
+          </div>
+          <div class="acc-item">
+            <button class="acc-head"><span data-i18n="acc.terms.q">Ticket purchase terms / Köpvillkor</span> <span class="plus">+</span></button>
+            <div class="acc-body"><div class="inner">
+<div data-lang="sv">
+
+              <p><em>Den svenska texten är den som gäller vid en tvist. The Swedish text below governs; the English translation follows it and is provided for convenience.</em></p>
+
+              <p><strong>1. Säljare.</strong> Kulturföreningen Musikbopp, org.nr <strong>802543-7834</strong>, med säte i Tyresö, ansluten till Svensk Live. E-post: <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>. Föreningen är arrangör av evenemangen och ansvarig för villkoren nedan.</p>
+
+              <p><strong>2. Var biljetter säljs.</strong> Biljetter säljs via <strong>Billetto</strong> (billetto.se). Köpet genomförs i Billettos kassa enligt Billettos köpvillkor, och eventuella serviceavgifter visas där innan du betalar. Villkoren nedan gäller vårt ansvar som arrangör, oavsett var biljetten är köpt.</p>
+
+              <p><strong>3. Ångerrätt.</strong> <strong>Det finns ingen ångerrätt på evenemangsbiljetter.</strong> Det följer av 2 kap 11 § punkt 12 lagen (2005:59) om distansavtal och avtal utanför affärslokaler, som undantar kulturevenemang och liknande fritidsaktiviteter när tjänsten ska tillhandahållas på en bestämd dag. Du kan alltså inte ångra ett biljettköp inom 14 dagar.</p>
+
+              <p><strong>4. Om vi ställer in eller flyttar evenemanget.</strong> Ställs evenemanget in får du <strong>hela biljettpriset tillbaka</strong>. Det gäller <strong>oavsett orsak</strong>, även vid väder, myndighetsbeslut, strömavbrott, lokalproblem eller andra händelser utanför vår kontroll. Vi kan erbjuda dig en biljett till ett kommande evenemang i stället, men du är aldrig skyldig att acceptera det, och du kan alltid välja pengarna. Flyttas evenemanget till ett annat datum får du välja mellan att behålla biljetten och att få pengarna tillbaka. Ändras evenemanget väsentligt, till exempel byte till en annan spelplats eller att en utannonserad huvudakt uteblir, har du rätt till återbetalning eller prisavdrag. Återbetalning sker till samma betalsätt, normalt inom 14 dagar.</p>
+
+              <p><strong>5. Vad återbetalningen inte omfattar.</strong> Vi ersätter biljettpriset. Vi ersätter inte kringkostnader som resa, boende, förlorad arbetsinkomst eller liknande, om inte vi orsakat skadan genom vårdslöshet. Denna begränsning gäller inte vid personskada och inte vid uppsåt eller grov vårdslöshet.</p>
+
+              <p><strong>6. Om du inte kan komma.</strong> En köpt biljett till ett evenemang som genomförs återköps inte. Hör av dig ändå om något allvarligt har hänt, vi löser sådant från fall till fall och gör det hellre generöst än formellt. Biljetter är personliga och knutna till ditt konto. Vill du överlåta en biljett till en annan medlem, mejla oss så flyttar vi den.</p>
+
+              <p><strong>7. Nekad entré.</strong> Våra evenemang är 18+ och legitimation krävs. Vi kan neka inträde eller avvisa någon vid kraftig berusning, påverkan av droger, hotfullt eller kränkande uppträdande, eller om personen inte följer säkerhetsanvisningar. I dessa fall återbetalas inte biljetten. Kan du inte legitimera dig, eller är du under 18 år, återbetalas inte heller biljetten, kontrollera detta innan du köper.</p>
+
+              <p><strong>8. Reklamation och tvist.</strong> Hör av dig till <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a> så svarar vi så fort vi kan. Om vi inte kommer överens kan du vända dig till <strong>Allmänna reklamationsnämnden (ARN)</strong>, Box 174, 101 23 Stockholm, <a href="https://www.arn.se" target="_blank" rel="noopener" style="color:var(--accent)">www.arn.se</a>. <strong>Vi följer ARN:s rekommendationer.</strong></p>
+
+              <p><strong>9. Tillämplig lag.</strong> Svensk lag gäller. Vid en tvist är den svenska versionen av dessa villkor den som gäller.</p>
+
+              </div>
+<div data-lang="en">
+
+              <p><strong>1. Seller.</strong> Kulturföreningen Musikbopp, org.nr <strong>802543-7834</strong>, seated in Tyresö, affiliated with Svensk Live. Email info@slutstation.se. The association organises the events and stands behind the terms below.</p>
+
+              <p><strong>2. Where tickets are sold.</strong> Tickets are sold through <strong>Billetto</strong> (billetto.se). The purchase itself happens in Billetto's checkout under Billetto's purchase terms, and any service fees are shown there before you pay. The terms below cover our responsibility as the organiser, wherever the ticket was bought.</p>
+
+              <p><strong>3. Right of withdrawal.</strong> <strong>There is no 14-day right of withdrawal on event tickets.</strong> This follows from chapter 2, section 11, point 12 of the Swedish Distance Contracts Act (2005:59), which excludes cultural events and similar leisure activities supplied on a specific date.</p>
+
+              <p><strong>4. If we cancel or move the event.</strong> If the event is cancelled you get <strong>the full ticket price back</strong>. That applies <strong>whatever the cause</strong>, including weather, an order from the authorities, a power failure, a venue problem, or anything else outside our control. We may offer you a ticket to a future event instead, but you are never obliged to accept it and you can always take the money. If the event moves to another date, you choose between keeping your ticket and getting a refund. If the event changes materially, a different venue, or an advertised headline act not appearing, you are entitled to a refund or a price reduction. Refunds go back to the same payment method, normally within 14 days.</p>
+
+              <p><strong>5. What a refund does not cover.</strong> We refund the ticket price. We do not compensate surrounding costs such as travel, accommodation or lost earnings, unless we caused the loss through negligence. This limitation does not apply to personal injury, nor to intent or gross negligence.</p>
+
+              <p><strong>6. If you can't make it.</strong> A ticket to an event that goes ahead is not bought back. Get in touch anyway if something serious has happened, we handle those case by case, and we would rather be generous than formal. Tickets are personal and tied to your account. To pass a ticket to another member, email us and we'll move it.</p>
+
+              <p><strong>7. Refused entry.</strong> Our events are 18+ and ID is required. We may refuse entry or remove someone for heavy intoxication, drug use, threatening or abusive behaviour, or refusal to follow safety instructions. In those cases the ticket is not refunded. If you cannot show ID, or are under 18, the ticket is likewise not refunded, check this before you buy.</p>
+
+              <p><strong>8. Complaints and disputes.</strong> Write to info@slutstation.se and we'll answer as quickly as we can. If we can't agree, you can take it to the Swedish National Board for Consumer Disputes (<strong>Allmänna reklamationsnämnden, ARN</strong>), Box 174, 101 23 Stockholm, www.arn.se. <strong>We follow ARN's recommendations.</strong></p>
+
+              <p><strong>9. Governing law.</strong> Swedish law applies. In a dispute, the Swedish version of these terms governs.</p>
+
+            </div>
+</div></div>
+          </div>
+          <div class="acc-item">
+            <button class="acc-head"><span data-i18n="acc.rules.q">Event terms &amp; conduct / Ordningsregler</span> <span class="plus">+</span></button>
+            <div class="acc-body"><div class="inner">
+<div data-lang="sv">
+
+              <p><strong>18+ och legitimation.</strong> Våra evenemang är för dig som fyllt 18. Ta med giltig legitimation, vi kontrollerar i dörren.</p>
+
+              <p><strong>Var evenemanget hålls.</strong> För utomhusevenemang lämnas platsen ut till dig som har biljett, kort innan evenemanget. Sprid den inte vidare.</p>
+
+              <p><strong>Väder.</strong> Utomhusevenemang genomförs i regn såväl som sol. Vi ställer in bara om vädret innebär en verklig säkerhetsrisk, och ställer vi in får du pengarna tillbaka enligt köpvillkoren ovan.</p>
+
+              <p><strong>Uppträdande.</strong> Vi har nolltolerans mot droger, våld, trakasserier och diskriminering. Följ personalens och vakternas anvisningar. Den som inte gör det avvisas.</p>
+
+              <p><strong>Alkohol.</strong> Alkohol serveras endast där vi har serveringstillstånd, och endast av vår personal.</p>
+
+              <p><strong>Ditt ansvar.</strong> Du ansvarar för dina egna tillhörigheter. Vi ansvarar inte för borttappade saker, men hör av dig, vi förvarar hittegods en tid efter varje evenemang.</p>
+
+              </div>
+<div data-lang="en">
+
+              <p><strong>18+ and ID.</strong> Our events are 18+. Bring valid ID; we check at the door.</p>
+
+              <p><strong>Where the event is.</strong> For outdoor events the location goes out to ticket holders shortly before. Don't pass it on.</p>
+
+              <p><strong>Weather.</strong> Outdoor events run rain or shine. We only cancel if the weather is a genuine safety risk, and if we cancel, you get your money back under the purchase terms above.</p>
+
+              <p><strong>Conduct.</strong> Zero tolerance for drugs, violence, harassment and discrimination. Follow the instructions of our staff and security. Anyone who doesn't will be removed.</p>
+
+              <p><strong>Alcohol.</strong> Alcohol is served only where we hold a serving licence, and only by our staff.</p>
+
+              <p><strong>Your things.</strong> You look after your own belongings. We're not liable for lost property, but do get in touch, we keep found items for a while after each event.</p>
+
+            </div>
+</div></div>
+          </div>
+          <div class="acc-item">
+            <button class="acc-head"><span data-i18n="acc.privacy.q">Bylaws &amp; Personal Data Handling Policy</span> <span class="plus">+</span></button>
+            <div class="acc-body"><div class="inner">
+<div data-lang="sv">
+              <p><strong>Föreningen.</strong> Föreningens namn är Kulturföreningen Musikbopp. Föreningen har sitt säte i Tyresö och är ansluten till Svensk Live. Föreningen är en fristående, partipolitiskt och religiöst obunden ideell förening. Föreningen är personuppgiftsansvarig för allt som beskrivs nedan. Frågor, eller en begäran om dina uppgifter: <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.</p>
+
+              <p><strong>Dina uppgifter finns på två ställen.</strong> När du blir medlem registreras dina uppgifter i <strong>eBas</strong>, medlemsregistret som Svensk Live driver, att bli medlem hos oss gör dig alltså också till medlem i Svensk Live. Separat lagras ditt Slutstation-konto i vår egen databas (Supabase), som ligger <strong>inom EU (Irland)</strong>.</p>
+
+              <p><strong>Vad vi sparar, och varför.</strong></p>
+              <p>· <strong>Ditt konto</strong>: namn, e-post, telefon, födelsedatum och adress. Vi behöver dem eftersom eBas kräver dem för att registrera och förnya ditt medlemskap. Ditt lösenord lagras aldrig i läsbar form hos oss; det hashas av vår autentiseringsleverantör.<br />
+              · <strong>Medlemsstatus</strong>: om ditt medlemskap är aktivt och när det senast förnyades, så att vi kan visa den gröna bocken.<br />
+              · <strong>Närvaro</strong>: vilka event du checkats in på i dörren, och när. Det är detta din tier räknas fram ur.<br />
+              · <strong>Din tier</strong>: härleds ur närvaron de senaste 24 månaderna. Den lagras inte separat, utan räknas fram ur dina incheckningar.<br />
+              · <strong>Val om utskick</strong>: om du tackat ja till att höra om kommande event. Det är skilt från att bli medlem, det är avstängt om du inte kryssar i det, och du kan stänga av det när som helst på ditt konto.<br />
+              · <strong>En referenskod</strong>: genereras för varje konto. Den används inte i dag.<br />
+              · <strong>Arbetspass</strong>: om du jobbar ett event: vilket event och i vilken roll.<br />
+              · <strong>Biljetter via Billetto</strong>: deltagarlistan för ett evenemang du köpt biljett till (namn och e-post), så att vi kan släppa in dig. Inga betalningsuppgifter.</p>
+
+              <p><strong>Vad vi medvetet inte sparar.</strong> Vi sparar inte ditt personnummer. eBas behöver bara ditt födelsedatum (som ÅÅÅÅMMDD) för att registrera dig, och det är allt vi håller. Vi sparar inte kortuppgifter, se betalningar nedan.</p>
+
+              <p><strong>Vem kan se det.</strong> Som utgångspunkt bara du. Dörr- och barpersonal får åtkomst för ett event i taget; den öppnar några timmar före dörrarna och stängs automatiskt efter eventet. Under passet ser de bara ditt namn, om ditt medlemskap är giltigt, din tier och vilka biljetter du har till just det eventet, aldrig din adress, ditt telefonnummer, ditt födelsedatum eller din e-post. Administratörer kan se medlemsuppgifter för att kunna driva föreningen. Vi säljer inte dina uppgifter och delar dem inte med annonsörer.</p>
+
+              <p><strong>Hur länge vi sparar det.</strong> Ditt konto och din närvarohistorik sparas så länge kontot finns. Medlemskapet i eBas gäller kalenderåret och upphör 1 januari om det inte förnyas. Be oss radera ditt konto så tar vi bort det ur vår databas; eBas är Svensk Lives register, så vi berättar också hur du blir borttagen därifrån.</p>
+
+              <p><strong>Dina rättigheter.</strong> Enligt GDPR kan du begära ett utdrag av dina uppgifter, be oss rätta dem, be oss radera dem, eller när som helst ta tillbaka ditt samtycke till utskick. Det mesta kan du göra själv på din kontosida; för övrigt mejlar du oss så ordnar vi det. Du har också rätt att klaga till Integritetsskyddsmyndigheten (IMY).</p>
+
+              <p><strong>Biljetter.</strong> Biljetter säljs via <strong>Billetto</strong>, och köpet sker hos dem enligt <a href="https://billetto.se/privacy" target="_blank" rel="noopener" style="color:var(--accent)">Billettos integritetspolicy</a>. Vi ser aldrig dina betalningsuppgifter. Inför ett evenemang får vi deltagarlistan från Billetto (namn och e-postadress) för att kunna släppa in dig, och din närvaro registreras då hos oss, vilket är det som flyttar din tier. Återbetalningar täcks av köpvillkoren ovan: ställer vi in eller flyttar ett evenemang får du hela biljettpriset tillbaka, oavsett orsak.</p>
+
+              <p><strong>Kontosaldo, på väg, inte igång än.</strong> Vi planerar att lägga till ett förbetalt saldo som du kan fylla på och använda till biljetter, bar och merch. Saldot kommer bara att kunna användas hos oss och kommer inte att kunna tas ut som kontanter. Inget som beskrivs i det här stycket samlar in några pengar i dag; det uppdateras med detaljer innan det går igång.</p>
+
+              <p><em>Senast uppdaterad 5 augusti 2026.</em></p>
+            </div>
+<div data-lang="en">
+              <p><strong>The association.</strong> Föreningens namn är Kulturföreningen Musikbopp. Föreningen har sitt säte i Tyresö och är ansluten till Svensk Live. Föreningen är en fristående, partipolitiskt och religiöst obunden ideell förening. The association is the data controller for everything described below. Questions, or any request about your data: <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.</p>
+
+              <p><strong>Two places your data lives.</strong> When you become a member your details are registered in <strong>eBas</strong>, the membership register run by Svensk Live, becoming a member here also makes you a member of Svensk Live. Separately, your Slutstation account is stored in our own database (Supabase), hosted <strong>inside the EU (Ireland)</strong>.</p>
+
+              <p><strong>What we store, and why.</strong></p>
+              <p>· <strong>Your account</strong>: name, email, phone, date of birth and address. We need these because eBas requires them to register and renew your membership. Your password is never stored by us in readable form; it is hashed by our authentication provider.<br />
+              · <strong>Membership status</strong>: whether your membership is active and when it was last renewed, so we can show you the green check.<br />
+              · <strong>Attendance</strong>: which events you were checked in to at the door, and when. This is what your tier is calculated from.<br />
+              · <strong>Your tier</strong>: derived from attendance over the last 24 months. It isn't stored separately; it's worked out from your check-ins.<br />
+              · <strong>Email preference</strong>: whether you opted in to hear about events. Opting in is separate from joining, it is off unless you tick it, and you can turn it off at any time on your account page.<br />
+              · <strong>A referral code</strong>: generated for every account. It is currently unused.<br />
+              · <strong>Staff assignments</strong>: if you work an event, which event and in what role.<br />
+              · <strong>Tickets via Billetto</strong>: the attendee list for an event you bought a ticket to (name and email), so we can admit you. No payment details.</p>
+
+              <p><strong>What we deliberately do not store.</strong> We do not store your personnummer. eBas needs only your date of birth (as YYYYMMDD) to register you, and that is all we hold. We do not store card details, see payments below.</p>
+
+              <p><strong>Who can see it.</strong> By default, only you. Door and bar staff are given access for one event at a time; it opens a few hours before doors and closes automatically after the event. While on shift they can see only your name, whether your membership is valid, your tier, and which tickets you hold for that one event, never your address, phone, date of birth or email. Administrators can see member records in order to run the association. We do not sell your data or share it with advertisers.</p>
+
+              <p><strong>How long we keep it.</strong> Your account and attendance history are kept while your account exists. Membership in eBas runs for the calendar year and lapses on 1 January unless renewed. Ask us to delete your account and we will remove it from our database; eBas is Svensk Live's register, so we will also tell you how to be removed from that.</p>
+
+              <p><strong>Your rights.</strong> Under GDPR you can ask for a copy of your data, ask us to correct it, ask us to delete it, or withdraw consent for marketing email at any time. Most of this you can do yourself on your account page; for anything else, email us and we will action it. You also have the right to complain to Integritetsskyddsmyndigheten (IMY).</p>
+
+              <p><strong>Tickets.</strong> Tickets are sold through <strong>Billetto</strong>, and the purchase happens with them under <a href="https://billetto.com/privacy" target="_blank" rel="noopener" style="color:var(--accent)">Billetto's privacy policy</a>. We never see your payment details. Ahead of an event, Billetto gives us the attendee list (name and email address) so we can admit you, and your attendance is then recorded with us, which is what moves your tier. Refunds are covered by the Köpvillkor above: if we cancel or move an event you get the full ticket price back, whatever the reason.</p>
+
+              <p><strong>Account balance, coming, not yet live.</strong> We intend to add a prepaid balance you can top up and spend on tickets, bar and merch. That balance will be usable only with us and will not be withdrawable as cash. Nothing described in this paragraph is collecting your money today; it will be updated with specifics before it goes live.</p>
+
+              <p><em>Last updated 5 August 2026.</em></p>
+            </div>
+</div></div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CONTACT / FOOTER ===================== -->
+  <footer class="footer" id="contact">
+    <div class="wrap">
+      <div class="contact-top">
+        <div class="reveal">
+          <span class="eyebrow" data-i18n="contact.eyebrow">Contact</span>
+          <h2 style="margin-top:20px;"><span data-i18n-html="contact.title">Got questions or<br />want to get involved?<br /></span><a href="mailto:info@slutstation.se">info@slutstation.se</a></h2>
+        </div>
+        <div class="contact-cols reveal">
+          <div class="col">
+            <h5 data-i18n="contact.reach">Reach us</h5>
+            <a href="mailto:info@slutstation.se">info@slutstation.se</a>
+            <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener">@slutstation.sthlm</a>
+            <a href="https://www.tiktok.com/@slutstationsthlm" target="_blank" rel="noopener">TikTok</a>
+          </div>
+          <div class="col">
+            <h5 data-i18n="contact.member">Membership</h5>
+            <a href="#apply" data-i18n="contact.apply">Apply for access</a>
+            <a href="#apply" data-i18n="contact.become">Become a member</a>
+            <a href="/account.html" data-i18n="contact.account">Your account</a>
+            <a href="#info" data-i18n="contact.bylaws">Bylaws &amp; privacy</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" width="1500" height="409" loading="lazy" decoding="async" />
+        <span class="copy">© 2024–2026 Slutstation · Underground House Music · Stockholm</span>
+        <div class="socials">
+          <a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
+          <a href="https://www.tiktok.com/@slutstationsthlm" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
+          <a href="mailto:info@slutstation.se" aria-label="Email">✉</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+  </main>
+
+  <!-- Cookie overlay backdrop -->
+  <div class="cookie-overlay hidden" id="cookieOverlay" aria-hidden="true"></div>
+
+  <!-- Cookie consent modal -->
+  <div class="cookie-modal hidden" id="cookieBanner" role="dialog" aria-modal="true" aria-labelledby="cookieTitle" aria-describedby="cookieDesc">
+    <div class="cookie-modal-inner">
+
+      <!-- Logo / Brand mark -->
+      <div class="cookie-brand">
+        <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation" class="cookie-logo" width="1500" height="409" decoding="async" />
+      </div>
+
+      <div class="cookie-head">
+        <p class="cookie-kicker" data-i18n="cookie.eyebrow">Privacy &amp; Cookies</p>
+        <h3 id="cookieTitle" data-i18n="cookie.title">We value your privacy</h3>
+      </div>
+
+      <p id="cookieDesc" data-i18n="cookie.lead">We use cookies to enhance your experience and analyse site traffic. Necessary cookies are always active. You choose whether to allow optional analytics and marketing cookies.</p>
+
+      <!-- Cookie categories -->
+      <div class="cookie-option-grid">
+
+        <!-- Necessary, always on -->
+        <div class="cookie-option cookie-option--locked">
+          <span class="option-text">
+            <strong data-i18n="cookie.nec">Necessary</strong>
+            <span class="desc" data-i18n="cookie.necB">Required for the site to function. Cannot be disabled.</span>
+          </span>
+          <span class="cookie-always-on" data-i18n="cookie.always">Always on</span>
+        </div>
+
+        <label class="cookie-option" for="cookieAnalytics">
+          <span class="option-text">
+            <strong data-i18n="cookie.ana">Analytics</strong>
+            <span class="desc" data-i18n="cookie.anaB">Help us understand traffic and improve the experience.</span>
+          </span>
+          <input id="cookieAnalytics" type="checkbox" />
+        </label>
+
+        <label class="cookie-option" for="cookieMarketing">
+          <span class="option-text">
+            <strong data-i18n="cookie.mkt">Marketing</strong>
+            <span class="desc" data-i18n="cookie.mktB">Allow Meta Pixel and related tools to measure campaigns.</span>
+          </span>
+          <input id="cookieMarketing" type="checkbox" />
+        </label>
+
+      </div>
+
+      <!-- Primary actions, equal weight -->
+      <div class="cookie-actions">
+        <button class="cookie-btn cookie-btn--accept" id="cookieBtnAccept" type="button" data-i18n="cookie.accept">Accept all</button>
+        <button class="cookie-btn cookie-btn--deny"   id="cookieBtnDeny"   type="button" data-i18n="cookie.decline">Decline all</button>
+      </div>
+
+      <!-- Save custom -->
+      <div class="cookie-footer">
+        <button class="cookie-link" id="cookieBtnSave" type="button" data-i18n="cookie.save">Save my choices</button>
+        <span class="cookie-footnote" data-i18n="cookie.change">Change preferences anytime via the <span style="font-size:0.95em">⚙</span> icon.</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Floating re-open trigger -->
+  <button class="cookie-trigger" id="cookieTrigger" type="button" aria-label="Open cookie settings" data-i18n-attr="aria-label:cookie.open" title="Cookie settings">⚙</button>
+
+  <!-- The EmailJS SDK used to be loaded here for the DJ application form. That
+       form moved to /account.html long ago, and this page has no <form> at all
+       any more, so it was a third-party connection and ~10KB fetched on every
+       front-page visit to init a library nothing then called. -->
+  <script type="module" src="/src/main.js?v=20260713"></script>
+  <script src="/slutstation-meta-events.js" defer></script>
+</body>
+</html>

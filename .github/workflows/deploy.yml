@@ -1,0 +1,60 @@
+name: Deploy to Loopia FTP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: #manual trigger
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      # Every VITE_* variable listed here is INLINED INTO THE PUBLIC BUNDLE by
+      # Vite. That is not a leak in the build, it is what the prefix means: it
+      # is how you pass something to browser code. So the only things that may
+      # appear below are values that are safe to publish.
+      #
+      # Five were removed because nothing in the site reads them and two of
+      # them were secrets: VITE_API_KEY (eBas — the Edge Function holds its own
+      # copy server-side), VITE_API_ENDPOINT, VITE_CORS_PROXY, and the Billetto
+      # pair, VITE_BILLETTO_API_KEY and VITE_BILLETTO_CLIENT_SECRET, which were
+      # being published on every single deploy.
+      #
+      # Delete those five in Settings -> Secrets and variables -> Actions.
+      # Delete rather than rotate: they were public, so they are burnt.
+      #
+      # The three EmailJS values stay. They are public by design — EmailJS is
+      # called from the browser — and the DJ application on the account page is
+      # the one thing that needs them. Without them it cannot send, and the
+      # page will now say so rather than showing a success screen over it.
+      - name: Build Application
+        run: npm run build
+        env:
+          VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+          VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+          VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+
+      - name: Sync files to Loopia FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ secrets.FTP_SERVER_DIR != '' && secrets.FTP_SERVER_DIR || 'public_html/' }}
+          protocol: ${{ secrets.FTP_PROTOCOL != '' && secrets.FTP_PROTOCOL || 'ftp' }}
