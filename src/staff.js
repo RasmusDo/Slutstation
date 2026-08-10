@@ -19,13 +19,13 @@ import { initI18n, t, getLang } from "./i18n.js";
 initGlassLight();
 initI18n();
 
-// The Supabase SDK is imported DYNAMICALLY, inside a try/catch, on purpose.
-// An ES module is all-or-nothing: a static `import` from a CDN that fails
-// (outage, ad blocker, hotel wifi portal, a phone on a filtered network) stops
-// the whole module from ever executing — so the language switch, the menu and
-// every static part of the page die with it, silently, with nothing on screen
-// to say why. account.js and tickets.js were already written this way; these
-// two pages were newer and were not, which is how they got missed.
+// The Supabase SDK is BUNDLED — installed from npm and code-split by Vite into
+// a chunk served from our own origin, so no third-party CDN sits in this
+// page's path any more (it used to load from esm.sh at runtime, which mattered
+// most here of anywhere: this page is read on a door at midnight, on whatever
+// network the venue has). It stays a DYNAMIC import inside a try/catch on
+// purpose: the split chunk keeps first paint light, and a network that dies
+// between the page and the chunk still degrades gracefully.
 //
 // Timed out rather than simply awaited: a request that is accepted and never
 // answered never rejects, so the catch would never fire and the page would
@@ -45,7 +45,7 @@ const importWithTimeout = (p, ms = 12000) =>
 // does need a client waits on `sdkReady` instead.
 let supabase = null;
 const sdkReady = importWithTimeout(
-  import("https://esm.sh/@supabase/supabase-js@2.45.4"))
+  import("@supabase/supabase-js"))
   .then(({ createClient }) => {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return true;
@@ -210,7 +210,7 @@ async function startScan() {
 
   let jsQR;
   try {
-    jsQR = (await import("https://esm.sh/jsqr@1.4.0")).default;
+    jsQR = (await import("jsqr")).default;
   } catch {
     msg.textContent = t("st.noScanner");
     msg.classList.add("err");
@@ -252,7 +252,12 @@ async function startScan() {
           lastCode = value; lastCodeAt = now;
           if (UUID_RE.test(value)) {
             navigator.vibrate?.(60);
-            await checkIn(value);
+            // A member QR is a TIER code now, not an entry code. Attendance is
+            // imported from the Billetto export after the night, so scanning
+            // somebody here answers "what are they owed?" rather than "are
+            // they in?". checkIn() is still used by the manual search below
+            // and by door mode.
+            await tierScan(value);
           } else if (CODE_RE.test(value)) {
             navigator.vibrate?.(60);
             await redeemTicket(value.toUpperCase());
@@ -343,6 +348,7 @@ function paintLookup(data, q, offline) {
       <div>
         <strong>${esc(m.name || "—")}</strong>
         <small>Tier ${m.tier ?? 1}${m.checked_in ? " · " + esc(t("st.alreadyIn")) : ""}</small>
+        ${m.note ? `<small style="display:block;color:var(--accent-soft);">⚑ ${esc(m.note)}</small>` : ""}
       </div>
       <div class="ops-actions">
         <span class="pill ${m.member_ok ? "ok" : "bad"}">${esc(m.member_ok ? t("st.pillMember") : t("st.pillLapsed"))}</span>
@@ -359,6 +365,29 @@ function paintLookup(data, q, offline) {
     })
   );
 }
+
+// ---------------------------------------------------------------------------
+// Report something from the door. Plain insert; RLS pins it to the event on
+// shift and to the caller's own id, so nothing here decides anything. If the
+// table isn't there yet (phase 18 unapplied) the error message says so and
+// the rest of the page is untouched.
+// ---------------------------------------------------------------------------
+$("reportSend")?.addEventListener("click", async () => {
+  const m = $("reportMsg");
+  const say = (text, ok) => { m.textContent = text; m.className = "form-msg" + (ok ? " ok" : " err"); };
+  const kind = $("reportKind")?.value || "other";
+  const note = $("reportNote")?.value.trim() || null;
+  if (!shift?.event_id) return say(t("st.reportNoShift"));
+  const btn = $("reportSend");
+  btn.disabled = true;
+  const { error } = await supabase.from("incident_reports").insert({
+    event_id: shift.event_id, kind, note,
+  });
+  btn.disabled = false;
+  if (error) return say(t("st.reportFail"));
+  $("reportNote").value = "";
+  say(t("st.reportOk"), true);
+});
 
 // ---------------------------------------------------------------------------
 // Tonight's check-ins
@@ -617,4 +646,81 @@ function offlineLookup(q) {
   if (!r) return null;
   const needle = q.toLowerCase();
   return r.rows.filter((m) => (m.name || "").toLowerCase().includes(needle)).slice(0, 25);
+}
+
+// ---------------------------------------------------------------------------
+// THE TIER SCAN — what this person is owed, and what they have already taken
+//
+// The whole point of showing the claimed state is that nobody has to be told
+// "no" twice. A second scan says when the first one was, so the answer at the
+// bar is "you got that at 23:40" rather than an argument.
+//
+// Tiers cannot move during a night — attendance goes in from the export
+// afterwards — so what this screen says at 22:00 it still says at 03:00.
+// ---------------------------------------------------------------------------
+const PERK_LABEL = { wardrobe: "st.giveWardrobe", drink: "st.giveDrink" };
+
+function perkRow(userId, p, tier) {
+  const label = t(PERK_LABEL[p.perk] || p.perk);
+  const when = p.claimed_at
+    ? new Date(p.claimed_at).toLocaleTimeString(getLang() === "sv" ? "sv-SE" : "en-GB",
+        { hour: "2-digit", minute: "2-digit" })
+    : "";
+  if (!p.entitled) {
+    return `<div class="perk-row is-off"><span>${esc(label)}</span>
+              <small>${esc(t("st.perkNotFor", { tier }))}</small></div>`;
+  }
+  if (p.claimed) {
+    return `<div class="perk-row is-used"><span>${esc(label)}</span>
+              <small>${esc(t("st.perkAlready", { time: when }))}</small>
+              <button class="btn btn-ghost btn-sm" data-unperk="${esc(p.perk)}"
+                      data-user="${esc(userId)}">${esc(t("st.perkUndo"))}</button></div>`;
+  }
+  return `<div class="perk-row"><span>${esc(label)}</span>
+            <button class="btn btn-primary btn-sm" data-perk="${esc(p.perk)}"
+                    data-user="${esc(userId)}">${esc(t("st.perkDone"))}</button></div>`;
+}
+
+async function tierScan(userId) {
+  const { data, error } = await supabase.rpc("staff_tier_scan", { p_user: userId });
+  if (error) {
+    renderResult("bad", t("st.notIn"), error.message || t("st.generic"));
+    return;
+  }
+
+  const tier = data?.tier ?? 1;
+  const perks = data?.perks || [];
+  const usable = perks.filter((p) => p.entitled);
+  // Green when there is something to hand over and it is still unclaimed;
+  // amber when everything they are owed has already gone. At arm's length on a
+  // dark door the colour is read before the words are.
+  const kind = !usable.length ? "warn"
+    : usable.every((p) => p.claimed) ? "warn" : "ok";
+
+  $("scanResult").innerHTML =
+    `<div class="scan-result ${kind}">
+       <h4>${esc(data?.name || t("st.memberWord"))} · ${esc(t("st.tierWord"))} ${tier}</h4>
+       ${data?.member_ok === false ? `<p>${esc(t("st.notMember"))}</p>` : ""}
+       ${usable.length
+         ? `<div class="perk-rows">${perks.map((p) => perkRow(userId, p, tier)).join("")}</div>`
+         : `<p>${esc(t("st.perkNothing"))}</p>`}
+     </div>`;
+
+  $("scanResult").querySelectorAll("[data-perk]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      b.disabled = true; b.textContent = "…";
+      const { error: e } = await supabase.rpc("staff_claim_perk",
+        { p_user: b.dataset.user, p_perk: b.dataset.perk });
+      if (e) renderResult("bad", t("st.notIn"), e.message);
+      else { navigator.vibrate?.(30); await tierScan(b.dataset.user); }
+    })
+  );
+  $("scanResult").querySelectorAll("[data-unperk]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      await supabase.rpc("staff_unclaim_perk",
+        { p_user: b.dataset.user, p_perk: b.dataset.unperk });
+      await tierScan(b.dataset.user);
+    })
+  );
 }

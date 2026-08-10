@@ -34,7 +34,7 @@ export const SUPABASE_ANON_KEY = "sb_publishable_MeXdRnFvHEwX0fp_Y00bUA_pWTkZ8Nb
 //
 // Leave this empty and no widget renders — everything works as before.
 // ---------------------------------------------------------------------------
-export const TURNSTILE_SITE_KEY = "";
+export const TURNSTILE_SITE_KEY = "0x4AAAAAAEMGCXhZJ7bX47RI";
 
 // ---------------------------------------------------------------------------
 // Own ticket sales (Stripe) — OFF.
@@ -54,12 +54,25 @@ export const TURNSTILE_SITE_KEY = "";
 export const OWN_TICKET_SALES = false;
 
 // ---------------------------------------------------------------------------
-// Entry code (the QR on the account page), OFF.
-//
-// Attendance for the September event comes from Billetto's attendee list, not
-// from scanning people at the door, so the code has nothing to do yet and
-// showing it would only raise questions at the entrance. The panel stays in
-// the page and the generator stays in account.js; this flag is the only thing
-// standing between them. Turn it on the day we scan at the door.
+// The invite code. Dormant: the column and the referral counting stay live in
+// the database, so anything collected while it is off is still there when it
+// comes back — this only decides whether the panel is drawn. Off because there
+// is no reward attached to it yet, and a code with nothing behind it invites
+// the question "what do I get?" with no answer.
+export const INVITE_CODE = false;
+
+// The member QR. It is no longer an ENTRY code — attendance is imported from
+// the Billetto export after the night, not scanned at the door — it is a TIER
+// code: the wardrobe and the bar scan it to see what somebody is owed and to
+// mark it handed over. Kept under a switch so it can be turned off again
+// without a deploy.
+export const ENTRY_CODE = true;
+
 // ---------------------------------------------------------------------------
-export const ENTRY_CODE = false;
+// The Apple Wallet card. Dormant: the wallet Edge Function, the pass art and
+// schema-phase20 are all built and stay built — this only decides whether the
+// "Add to Apple Wallet" button is drawn on the account page. Off until the
+// Apple Developer membership and the signing certificate exist (ROLLOUT.md
+// §9), because a button that answers "not switched on yet" invites the
+// question "then why is it here?" with no good answer.
+export const WALLET_CARD = false;

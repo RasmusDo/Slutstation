@@ -7,9 +7,7 @@
   <meta name="theme-color" content="#0a0b0f" />
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-  <link rel="preconnect" href="https://esm.sh" crossorigin />
   <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
-  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
   <!-- Device tier, decided before the stylesheet so the first paint is already
        the affordable one. Full rationale in index.html. -->
   <script>
@@ -65,6 +63,25 @@
         </div>
       </section>
 
+      <!-- Shown between password and panel when this admin has MFA enrolled:
+           the session is real but only aal1, and every admin RPC would refuse
+           it (see schema-phase15-admin-mfa.sql). -->
+      <section id="stateMfa" hidden>
+        <div class="form-shell acc-narrow" style="text-align:center;">
+          <h3 style="font-weight:600;font-size:1.2rem;">Two-factor check</h3>
+          <p style="color:var(--muted);margin-top:8px;">Enter the 6-digit code from your authenticator app.</p>
+          <form id="mfaForm" novalidate style="margin-top:18px;">
+            <div class="field" style="max-width:220px;margin-inline:auto;">
+              <input id="mfaCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="123456" style="text-align:center;letter-spacing:0.3em;font-size:1.2rem;" />
+            </div>
+            <div class="form-actions" style="justify-content:center;margin-top:14px;">
+              <button type="submit" class="btn btn-primary btn-sm">Verify</button>
+              <span class="form-msg" id="mfaMsg" role="status"></span>
+            </div>
+          </form>
+        </div>
+      </section>
+
       <section id="stateAdmin" hidden>
         <!-- Only rendered when an event is actually today. On every other day
              the panel opens where it always did. -->
@@ -82,6 +99,7 @@
             <button class="tab" data-panel="apply">Applications<span class="tab-badge" id="applyBadge" hidden></span></button>
             <button class="tab" data-panel="events">Events</button>
             <button class="tab" data-panel="tickets">Tickets</button>
+            <button class="tab" data-panel="stats">Stats</button>
           </div>
         </div>
 
@@ -109,6 +127,50 @@
               <p>Where your members sit right now, over the trailing 24 months.</p>
             </div>
             <div class="ops-list" id="tierSpread"></div>
+          </div>
+
+          <!-- ============ SECURITY (this admin's own MFA) ============ -->
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Security</h3>
+              <p>Two-factor protects this account's admin rights: once enrolled, every admin action requires a session that presented the code. Your phone's authenticator app (or a password manager) scans the QR.</p>
+            </div>
+            <div id="mfaCard"><p style="color:var(--muted);">Checking…</p></div>
+          </div>
+
+          <!-- ============ TEST EMAILS ============ -->
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Test the emails</h3>
+              <p>Sends one copy of each system email to the address below and marks nobody. What you receive is exactly what members receive, so a template change is verifiable in ten seconds instead of on the night.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full" style="max-width:340px;"><label for="testEmailTo">Send to</label><input id="testEmailTo" type="email" autocomplete="email" /></div>
+              <div class="form-actions">
+                <button class="btn btn-ghost btn-sm" id="testDigest">Weekly digest</button>
+                <button class="btn btn-ghost btn-sm" id="testWelcome">"You're in" email</button>
+                <button class="btn btn-ghost btn-sm" id="testAnnounce">Announcement email</button>
+                <span class="form-msg" id="testEmailMsg"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ STATS ============ -->
+        <div class="admin-panel" id="panel-stats" hidden>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Signups per week</h3>
+              <p>The last twelve weeks of new accounts. Tier spread lives on the Overview.</p>
+            </div>
+            <div class="ops-list" id="statSignups"><p class="ops-empty">Loading…</p></div>
+          </div>
+          <div class="form-shell acc-panel">
+            <div class="acc-card-head">
+              <h3>Attendance per event</h3>
+              <p>Check-ins against capacity, most recent nights first.</p>
+            </div>
+            <div class="ops-list" id="statAttendance"></div>
           </div>
         </div>
 
@@ -142,6 +204,22 @@
 
             <div class="acc-card-head" style="margin-top:28px;"><h3>Account tag</h3></div>
             <div class="ops-actions" id="detailRole"></div>
+
+            <!-- One note per member, shown to door staff in the lookup while
+                 on shift. Cleared automatically after 12 months, and the
+                 member can read their own (schema-phase18). -->
+            <div class="acc-card-head" style="margin-top:28px;">
+              <h3>Door note</h3>
+              <p>"Refused last time", "comp, approved by Axel". Door staff see it in the lookup on shift. Clears itself after twelve months, and the member can read it — write nothing you wouldn't say to them.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full"><textarea id="doorNote" rows="2" placeholder="Nothing on this person."></textarea></div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="doorNoteSave">Save note</button>
+                <button class="btn btn-ghost btn-sm" id="doorNoteClear">Clear</button>
+                <span class="form-msg" id="doorNoteMsg"></span>
+              </div>
+            </div>
 
             <div class="acc-card-head" style="margin-top:28px;">
               <h3>Give a tag for an event</h3>
@@ -315,9 +393,33 @@
           <div class="form-shell acc-panel" id="eventDetail" hidden>
             <div class="acc-card-head"><h3 id="evName">, </h3><p id="evMeta"></p></div>
             <div class="kpi-grid" id="evKpis"></div>
+
+            <!-- What the night cost: line items, cost or income, net at the
+                 bottom. Billetto payouts are entered as income by hand. -->
+            <div class="acc-card-head" style="margin-top:22px;"><h3>What the night cost</h3>
+              <p>Venue, sound, artists, security — and the payout as income. This is the break-even the board (and eventually Skatteverket) will ask for.</p></div>
+            <div class="ops-list" id="evCosts"></div>
+            <div class="form-grid" style="margin-top:10px;">
+              <div class="field"><label for="costLabel">Line</label><input id="costLabel" placeholder="Sound system hire" /></div>
+              <div class="field"><label for="costAmount">Amount, kr</label><input id="costAmount" type="number" min="1" step="1" /></div>
+              <div class="field"><label for="costKind">Type</label>
+                <select id="costKind"><option value="cost">Cost</option><option value="income">Income</option></select>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="costAdd">Add line</button>
+                <span class="form-msg" id="costMsg"></span>
+              </div>
+            </div>
           <div class="form-shell acc-panel" id="evAnnounce" style="margin-top:18px;"></div>
             <div class="acc-card-head" style="margin-top:28px;"><h3>Working this event</h3></div>
             <div class="ops-list" id="evStaff"></div>
+
+            <!-- Reports filed from the door during the night (phase 18). -->
+            <div class="acc-card-head" style="margin-top:28px;">
+              <h3>Reports from the door</h3>
+              <p>Everything staff filed during the night, timestamped. This is the incident record a serveringstillstånd application will ask about.</p>
+            </div>
+            <div class="ops-list" id="evIncidents"></div>
 
             <div class="acc-card-head" style="margin-top:32px;">
               <h3>Import attendance from a spreadsheet</h3>

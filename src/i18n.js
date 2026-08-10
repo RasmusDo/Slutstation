@@ -102,8 +102,8 @@ export const DICT = {
     sv: "Gå med i kulturföreningen och skapa ditt Slutstation-konto i ett steg. Medlemskapet är gratis och krävs för att komma på våra utomhusevent.",
   },
   "apply.note":      {
-    en: 'Membership is free and runs to the end of the calendar year, everyone renews in January, whenever they joined. Creating your account registers you with <strong>Kulturföreningen Musikbopp</strong>, gives you a tier that grows every time you come, and an entry code for the door.',
-    sv: 'Medlemskapet är gratis och gäller till årsskiftet, alla förnyar i januari, oavsett när man gick med. När du skapar kontot registreras du i <strong>Kulturföreningen Musikbopp</strong>, får en tier som växer varje gång du kommer, och en entrékod till dörren.',
+    en: 'Membership is free and runs to the end of the calendar year, everyone renews in January, whenever they joined. Creating your account registers you with <strong>Kulturföreningen Musikbopp</strong>, gives you a tier that grows every time you come, and a tier code the bar and the wardrobe can scan.',
+    sv: 'Medlemskapet är gratis och gäller till årsskiftet, alla förnyar i januari, oavsett när man gick med. När du skapar kontot registreras du i <strong>Kulturföreningen Musikbopp</strong>, får en tier som växer varje gång du kommer, och en tier-kod som baren och garderoben kan skanna.',
   },
   "apply.cta":       { en: "Become a member", sv: "Bli medlem" },
   "apply.have":      { en: "I already have an account", sv: "Jag har redan ett konto" },
@@ -130,8 +130,8 @@ export const DICT = {
 
   "acc.member.q":    { en: "What does it mean to become a member?", sv: "Vad innebär det att bli medlem?" },
   "acc.member.a":    {
-    en: 'Becoming a member means you\'re aligned with our culture and values. Membership gives you access to our outdoor events. It\'s free, always will be, and runs to the end of the calendar year. Join in August and you\'re a member until 1 January; everyone renews in January, whenever they joined. When you sign up you\'ll get a confirmation email, click the link in it to activate your account, and your membership is registered in eBas automatically. You can see your membership status, your tier and your entry code any time at <a href="/account.html" style="color:var(--accent)">your account</a>. If any uncertainty arises, please contact us at <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.',
-    sv: 'Att bli medlem betyder att du delar vår kultur och våra värderingar. Medlemskapet ger dig tillgång till våra utomhusevent. Det är gratis, kommer alltid att vara det, och gäller till årsskiftet. Går du med i augusti är du medlem till 1 januari; alla förnyar i januari, oavsett när man gick med. När du registrerar dig får du ett bekräftelsemejl, klicka på länken för att aktivera kontot, så registreras medlemskapet i eBas automatiskt. Din medlemsstatus, din tier och din entrékod ser du när som helst på <a href="/account.html" style="color:var(--accent)">ditt konto</a>. Undrar du något, hör av dig till <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.',
+    en: 'Becoming a member means you\'re aligned with our culture and values. Membership gives you access to our outdoor events. It\'s free, always will be, and runs to the end of the calendar year. Join in August and you\'re a member until 1 January; everyone renews in January, whenever they joined. When you sign up you\'ll get a confirmation email, click the link in it to activate your account, and your membership is registered in eBas automatically. You can see your membership status, your tier and your tier code any time at <a href="/account.html" style="color:var(--accent)">your account</a>. The tiers, how many events each one takes, and what each one gives you can change as the association grows; anything already given to you stays yours. If any uncertainty arises, please contact us at <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.',
+    sv: 'Att bli medlem betyder att du delar vår kultur och våra värderingar. Medlemskapet ger dig tillgång till våra utomhusevent. Det är gratis, kommer alltid att vara det, och gäller till årsskiftet. Går du med i augusti är du medlem till 1 januari; alla förnyar i januari, oavsett när man gick med. När du registrerar dig får du ett bekräftelsemejl, klicka på länken för att aktivera kontot, så registreras medlemskapet i eBas automatiskt. Din medlemsstatus, din tier och din tier-kod ser du när som helst på <a href="/account.html" style="color:var(--accent)">ditt konto</a>. Vilka tiers som finns, hur många event varje nivå kräver och vad varje nivå ger kan ändras när föreningen växer; det du redan har fått behåller du. Undrar du något, hör av dig till <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.',
   },
   "acc.events.q":    { en: "About our events", sv: "Om våra event" },
   "acc.events.a":    {
@@ -229,9 +229,6 @@ export const DICT = {
 
   // The coming-soon list. It was written straight into the HTML in English,
   // so a Swedish visitor read the whole panel in the wrong language.
-  "acct.soon1T":     { en: "Tier rewards",  sv: "Tier-förmåner" },
-  "acct.soon1B":     { en: "Right now your tier is a number. Next it unlocks things, early access to releases, cheaper wardrobe, and tickets that never reach the public.",
-                       sv: "Just nu är din tier bara en siffra. Snart låser den upp saker: tidig tillgång till släpp, billigare garderob och biljetter som aldrig når ut publikt." },
   "acct.soon2T":     { en: "Account balance", sv: "Kontosaldo" },
   "acct.soon2B":     { en: "Top up once and spend it on tickets, at the bar and on merch. Usable with us only, and never withdrawable as cash.",
                        sv: "Fyll på en gång och använd det till biljetter, i baren och på merch. Går bara att använda hos oss och kan aldrig tas ut som kontanter." },
@@ -270,9 +267,9 @@ export const DICT = {
   "acct.statLast":   { en: "last event",    sv: "senaste eventet" },
   "acct.ticketsT":   { en: "Your tickets",  sv: "Dina biljetter" },
   "acct.ticketsL":   { en: "Show the QR at the door. Each one scans once.", sv: "Visa QR-koden i dörren. Varje biljett skannas en gång." },
-  "acct.qrTitle":    { en: "Your entry code", sv: "Din entrékod" },
-  "acct.qrLead":     { en: "Show this at the door. Scanning it records your attendance and moves your tier.",
-                       sv: "Visa den i dörren. När den skannas registreras ditt besök och din tier växer." },
+  "acct.qrTitle":    { en: "Your tier code", sv: "Din tier-kod" },
+  "acct.qrLead":     { en: "Show this at the wardrobe or the bar. It proves what tier you are and what that is worth tonight.",
+                       sv: "Visa den i garderoben eller i baren. Den visar vilken tier du har och vad det är värt i kväll." },
   "acct.qrOffline":  { en: "Works offline once the page has loaded.", sv: "Fungerar offline när sidan har laddats." },
   "acct.detailsT":   { en: "Your details",  sv: "Dina uppgifter" },
   "acct.detailsDone":  { en: "Complete",  sv: "Klart" },
@@ -332,7 +329,8 @@ export const DICT = {
                        sv: "Medlemskapet är gratis och krävs för att komma på våra event. Registrera dig nedan." },
   "ms.topTier":      { en: "<b>Top tier.</b> Nothing left to climb.", sv: "<b>Högsta tier.</b> Inget kvar att klättra." },
   "ms.unlocked":     { en: "<b>Tier unlocked</b>, it updates at your next check-in.", sv: "<b>Tier upplåst</b>, den uppdateras vid nästa incheckning." },
-  "ms.toNext":       { en: "<b>{n}</b> more event(s) to Tier {t}", sv: "<b>{n}</b> event kvar till Tier {t}" },
+  "ms.toNext":       { en: "<b>{n}</b> more events to Tier {t}", sv: "<b>{n}</b> event kvar till Tier {t}" },
+  "ms.toNext1":      { en: "<b>{n}</b> more event to Tier {t}",  sv: "<b>{n}</b> event kvar till Tier {t}" },
   "ms.eventsWord":   { en: "events",        sv: "event" },
   "ms.max":          { en: "max",           sv: "max" },
   "ms.tierAt":       { en: "Tier {t} at {n}", sv: "Tier {t} vid {n}" },
@@ -367,6 +365,41 @@ export const DICT = {
   "acct.resendSending":   { en: "Sending…", sv: "Skickar…" },
   "acct.resendSent": { en: "Sent. Check your inbox, and your spam folder.", sv: "Skickat. Kolla inkorgen, och skräpposten." },
   "acct.resetSent":  { en: "Password reset link sent, check your inbox.", sv: "Länk för återställning skickad, kolla inkorgen." },
+
+  // ---- staged signup + magic link ----
+  "acct.step1":      { en: "Account", sv: "Konto" },
+  "acct.step2":      { en: "Your details", sv: "Dina uppgifter" },
+  "acct.stepOf":     { en: "Step {n} of 2", sv: "Steg {n} av 2" },
+  "acct.continue":   { en: "Continue", sv: "Fortsätt" },
+  "acct.back":       { en: "Back", sv: "Tillbaka" },
+  "acct.detailsWhy": { en: "eBas, the membership register, needs these to register you. They stay between us and it.",
+                       sv: "eBas, medlemsregistret, behöver detta för att registrera dig. Det stannar mellan oss och det." },
+  "acct.magic":      { en: "Email me a sign-in link", sv: "Mejla mig en inloggningslänk" },
+  "acct.magicSent":  { en: "Link sent. Open it on this device and you're signed in.",
+                       sv: "Länk skickad. Öppna den på den här enheten så är du inloggad." },
+  "err.noAccount":   { en: "No account with that email. Create one first.",
+                       sv: "Inget konto med den e-posten. Skapa ett först." },
+
+  // ---- the tier, played as the game it already is ----
+  "ms.perkAt":       { en: "Unlocks at {tier}:", sv: "Låses upp vid {tier}:" },
+  "ms.topPct":       { en: "Top {p}% of members", sv: "Topp {p} % av medlemmarna" },
+  "ms.safeUntil":    { en: "{tier} is yours until at least {date}.",
+                       sv: "{tier} är din till åtminstone {date}." },
+  "ms.decayWarn":    { en: "A night ages out of your 24-month window on {date} — one more event before then keeps {tier}.",
+                       sv: "En kväll faller ur ditt 24-månadersfönster {date} — ett evenemang till innan dess behåller {tier}." },
+  "ms.promoT":       { en: "Promoted.", sv: "Uppflyttad." },
+  "ms.promoB":       { en: "You reached {tier} on {date}.", sv: "Du nådde {tier} den {date}." },
+  "ms.promoBNoDate": { en: "You reached {tier}.", sv: "Du nådde {tier}." },
+
+  // ---- Apple Wallet ----
+  "acct.walletAdd1": { en: "Add to", sv: "Lägg till i" },
+  "acct.walletAdd2": { en: "Apple Wallet", sv: "Apple Wallet" },
+  "acct.walletOk":   { en: "Card downloaded — open it to add it to Wallet. It updates itself when your tier moves.",
+                       sv: "Kortet laddades ner — öppna det för att lägga till det i Wallet. Det uppdaterar sig själv när din tier ändras." },
+  "acct.walletSoon": { en: "Wallet cards aren't switched on yet — soon.",
+                       sv: "Wallet-kort är inte påslaget ännu — snart." },
+  "acct.walletFail": { en: "Couldn't fetch the card. Check your connection and try again.",
+                       sv: "Kunde inte hämta kortet. Kontrollera uppkopplingen och försök igen." },
 
   // ---- tickets page ----
   "tk.eyebrow":      { en: "Tickets",       sv: "Biljetter" },
@@ -431,8 +464,63 @@ export const DICT = {
   "gallery.next":    { en: "Next photo",     sv: "Nästa bild" },
 
   "acct.qrSave":     { en: "Save it to my photos", sv: "Spara den bland mina bilder" },
-  "tier.lead":       { en: "What each tier unlocks is still being decided. Your count is already running, so nothing you turn up to now is wasted.",
-                       sv: "Vad varje tier låser upp håller vi fortfarande på att bestämma. Räkningen är redan igång, så inget du dyker upp på nu är bortkastat." },
+  "tier.lead":       { en: "Every tier keeps everything below it. Counted over the last 24 months, so it moves both ways.",
+                       sv: "Varje tier behåller allt under sig. Räknas över de senaste 24 månaderna, så den rör sig åt båda hållen." },
+  "tier.r1":         { en: "Buy tickets to members-only events.",
+                       sv: "Köp biljetter till events endast för medlemmar." },
+  "tier.r2":         { en: "The wardrobe is on us, every night you come.",
+                       sv: "Garderoben bjuder vi på, varje kväll du kommer." },
+  "tier.r4":         { en: "Tickets at our lowest price, always — even on a night that has sold out.",
+                       sv: "Biljetter till vårt lägsta pris, alltid — även en kväll som är slutsåld." },
+  "tier.r3":         { en: "A soft drink or a Red Bull on us, 20% off your ticket, and the announcement before anyone else.",
+                       sv: "En läsk eller en Red Bull på oss, 20% på biljetten, och släppet före alla andra." },
+  "tier.change":     { en: "The tiers, and what each one gives you, can change as we grow. A code you have already been given stays yours.",
+                       sv: "Tiers, och vad varje nivå ger dig, kan ändras när vi växer. En kod du redan har fått behåller du." },
+  // The tier card
+  "acct.codesTitle": { en: "Your codes",   sv: "Dina koder" },
+  "acct.codeTier3":  { en: "20% off your ticket", sv: "20% på biljetten" },
+  "acct.codeTier4":  { en: "Your Tier 4 ticket price", sv: "Ditt Tier 4-biljettpris" },
+  "acct.codeShow":   { en: "Show",         sv: "Visa" },
+  "acct.codeHide":   { en: "Hide",         sv: "Dölj" },
+  "acct.codeCopy":   { en: "Copy",         sv: "Kopiera" },
+  "acct.codeCopied": { en: "Copied",       sv: "Kopierad" },
+  // Said once, quietly. A code is one person's, and a code posted in a group
+  // chat is a code that stops working for the person who earned it.
+  // Per-kind, and only ever seen by somebody holding that code. The one thing
+  // worth saying is "it works once, so put the whole group on one order" —
+  // without it, a member spends their code on a single ticket and finds it
+  // dead when their friends want in. It promises no number and no percentage.
+  "acct.codeUse3":   { en: "Works once. Put everyone you're bringing on the same order before you check out.",
+                       sv: "Fungerar en gång. Lägg alla du tar med på samma order innan du slutför köpet." },
+  "acct.codeUse4":   { en: "Your best price, and it works once. Put everyone you're bringing on the same order.",
+                       sv: "Ditt bästa pris, och det fungerar en gång. Lägg alla du tar med på samma order." },
+  // Demo mode
+  "acct.demoTitle":  { en: "Demo mode",      sv: "Demoläge" },
+  "acct.demoLead":   { en: "Admins only. Draws the page as a member of that tier would see it. Nothing is saved and no real code is used.",
+                       sv: "Endast admin. Ritar sidan som en medlem på den tiern skulle se den. Inget sparas och ingen riktig kod används." },
+  "acct.demoOff":    { en: "Off",            sv: "Av" },
+  "acct.demoOn":     { en: "DEMO — not real data", sv: "DEMO — inte riktig data" },
+  "acct.codeMine":   { en: "Yours alone. Paste it at checkout on Billetto.",
+                       sv: "Bara din. Klistra in den i kassan på Billetto." },
+  "acct.codeSoon":   { en: "You have earned this — we are preparing your code. It will appear here.",
+                       sv: "Du har förtjänat den här — vi förbereder din kod. Den dyker upp här." },
+  "acct.perkTitle":  { en: "What your code is worth tonight", sv: "Vad din kod är värd i kväll" },
+  "acct.perkWardrobe": { en: "Free wardrobe", sv: "Gratis garderob" },
+  "acct.perkDrink":  { en: "A soft drink or a Red Bull", sv: "En läsk eller en Red Bull" },
+  "acct.perkClaimed":{ en: "used at {time}", sv: "använd {time}" },
+  "acct.perkOpen":   { en: "not used yet", sv: "inte använd än" },
+  "acct.perkNone":   { en: "Come to one more night and the wardrobe is on us.",
+                       sv: "Kom på en kväll till så bjuder vi på garderoben." },
+  // The staff scanner
+  "st.tierWord":     { en: "Tier",        sv: "Tier" },
+  "st.giveWardrobe": { en: "Free wardrobe",  sv: "Gratis garderob" },
+  "st.giveDrink":    { en: "Soft drink / Red Bull", sv: "Läsk / Red Bull" },
+  "st.perkDone":     { en: "Handed over",  sv: "Utlämnad" },
+  "st.perkAlready":  { en: "Already taken at {time}", sv: "Redan uttagen {time}" },
+  "st.perkNotFor":   { en: "Not on Tier {tier}", sv: "Ingår inte i Tier {tier}" },
+  "st.perkUndo":     { en: "Undo",         sv: "Ångra" },
+  "st.perkNothing":  { en: "Nothing to hand over at this tier.",
+                       sv: "Inget att lämna ut på den här tiern." },
   "tier.soon":       { en: "Coming soon",   sv: "Kommer snart" },
   // ---- shifts and the creator dashboard ----
   "shift.title":     { en: "When you work",  sv: "När du jobbar" },
@@ -669,6 +757,8 @@ export const DICT = {
   "st.offlineB":     { en: "No signal, this check-in will send itself when you're back online.",
                        sv: "Ingen uppkoppling, incheckningen skickas av sig själv när du är online igen." },
   "st.notIn":        { en: "Not checked in", sv: "Inte incheckad" },
+  "st.notMember":    { en: "Membership is not active — send them to the account page.",
+                       sv: "Medlemskapet är inte aktivt — hänvisa dem till kontosidan." },
   "st.memberWord":   { en: "Member",        sv: "Medlem" },
   "st.nEvents":      { en: "{n} events",    sv: "{n} event" },
   "st.holds":        { en: "holds {list}",  sv: "har {list}" },
@@ -691,6 +781,22 @@ export const DICT = {
   "st.shortT":       { en: "Code too short", sv: "Koden är för kort" },
   "st.shortB":       { en: "It looks like SS-XXXX-XXXX.", sv: "Den ser ut så här: SS-XXXX-XXXX." },
   "st.noMatch":      { en: "Nobody by that name.", sv: "Ingen med det namnet." },
+
+  // ---- reporting from the door ----
+  "st.reportT":       { en: "Report something", sv: "Rapportera något" },
+  "st.reportL":       { en: "Refused entry, an incident, capacity reached. Timestamped and goes straight to the admins.",
+                        sv: "Nekad entré, en incident, fullt hus. Tidsstämplas och går direkt till administratörerna." },
+  "st.reportKind":    { en: "What happened", sv: "Vad hände" },
+  "st.reportRefused": { en: "Refused entry", sv: "Nekad entré" },
+  "st.reportIncident":{ en: "Incident", sv: "Incident" },
+  "st.reportCapacity":{ en: "Capacity reached", sv: "Fullt hus" },
+  "st.reportOther":   { en: "Something else", sv: "Något annat" },
+  "st.reportNote":    { en: "A line about it (optional)", sv: "En rad om det (valfritt)" },
+  "st.reportSend":    { en: "File it", sv: "Rapportera" },
+  "st.reportOk":      { en: "Filed. The admins can see it now.", sv: "Rapporterat. Administratörerna ser det nu." },
+  "st.reportFail":    { en: "Couldn't file it — check the connection and try again.",
+                        sv: "Kunde inte rapportera — kontrollera uppkopplingen och försök igen." },
+  "st.reportNoShift": { en: "You're not on shift right now.", sv: "Du är inte i tjänst just nu." },
   "st.alreadyIn":    { en: "already in",    sv: "redan inne" },
   "st.pillMember":   { en: "member",        sv: "medlem" },
   "st.pillLapsed":   { en: "not active",    sv: "inte aktiv" },
@@ -770,10 +876,9 @@ export function applyI18n(root = document, lang = getLang()) {
     el.hidden = el.dataset.lang !== lang;
   });
 
-  // An accordion that was open may have changed height when its text swapped.
-  root.querySelectorAll(".acc-item.open .acc-body").forEach((body) => {
-    body.style.maxHeight = body.scrollHeight + "px";
-  });
+  // Open accordions used to need re-measuring here when their text swapped
+  // length; the grid-rows animation in the stylesheet tracks content height
+  // on its own, so there is nothing to fix up any more.
 
   root.querySelectorAll("[data-lang-btn]").forEach((btn) => {
     const on = btn.dataset.langBtn === lang;

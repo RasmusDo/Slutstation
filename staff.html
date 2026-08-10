@@ -7,9 +7,7 @@
   <meta name="theme-color" content="#0a0b0f" />
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
-  <link rel="preconnect" href="https://esm.sh" crossorigin />
   <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
-  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
   <!-- Device tier, decided before the stylesheet so the first paint is already
        the affordable one. Full rationale in index.html. -->
   <script>
@@ -131,6 +129,35 @@
             <span class="acc-hint" id="offlineNote"></span>
           </div>
           <div class="ops-list" id="lookupList"></div>
+        </div>
+
+        <!-- Report something. One press files a timestamped note straight
+             into the admin panel — the beginning of the incident record a
+             serveringstillstånd application will eventually ask for. -->
+        <div class="form-shell acc-panel">
+          <div class="acc-card-head">
+            <h3 data-i18n="st.reportT">Report something</h3>
+            <p data-i18n="st.reportL">Refused entry, an incident, capacity reached. Timestamped and goes straight to the admins.</p>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="reportKind" data-i18n="st.reportKind">What happened</label>
+              <select id="reportKind">
+                <option value="refused_entry" data-i18n="st.reportRefused">Refused entry</option>
+                <option value="incident" data-i18n="st.reportIncident">Incident</option>
+                <option value="capacity" data-i18n="st.reportCapacity">Capacity reached</option>
+                <option value="other" data-i18n="st.reportOther">Something else</option>
+              </select>
+            </div>
+            <div class="field full">
+              <label for="reportNote" data-i18n="st.reportNote">A line about it (optional)</label>
+              <input id="reportNote" autocomplete="off" />
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary btn-sm" id="reportSend" data-i18n="st.reportSend">File it</button>
+              <span class="form-msg" id="reportMsg" role="status"></span>
+            </div>
+          </div>
         </div>
 
         <!-- DOOR: tonight -->

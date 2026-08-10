@@ -8,9 +8,7 @@
   <meta name="theme-color" content="#0a0b0f" />
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
 
-  <link rel="preconnect" href="https://esm.sh" crossorigin />
   <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
-  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
   <!-- Device tier, decided before the stylesheet so the first paint is already
        the affordable one. Full rationale in index.html. -->
   <script>
@@ -29,32 +27,47 @@
   <link rel="stylesheet" crossorigin href="/account.css">
 </head>
 <body class="inner">
+  <!-- ===================== ANNOUNCEMENT BAR ===================== -->
   <div class="announce" id="announce">
     <p>✦ <span class="full"><span data-i18n="announce.text">No upcoming events announced yet.</span>&nbsp;</span><a href="https://www.instagram.com/slutstation.sthlm/" target="_blank" rel="noopener" data-i18n="announce.link">Follow us on Instagram →</a></p>
     <button class="x" id="announceX" aria-label="Dismiss" data-i18n-attr="aria-label:announce.dismiss">×</button>
   </div>
 
   <div class="grain"></div>
+  <div class="aura"></div>
+  <div class="aura aura-2"></div>
+  <div class="aura aura-3"></div>
+
+  <!-- ============ FIXED BACKDROP ============
+        Same fixed backdrop as the front page. There's no hero to scroll past
+        here, so --hb is pinned to 1 in account.css and only the blurred layer
+        shows — which is a 3KB still the build inlines into the stylesheet, so
+        this backdrop costs no request and no filter work at all. It used to be
+        the video's full-size poster with a 22px blur() run over it on every
+        paint, for a picture nobody can make out either way. -->
   <div class="hero-bg acc-bg" id="heroBg" aria-hidden="true">
+    <div class="hero-bg-blur"></div>
     <div class="hero-bg-tint"></div>
   </div>
-
+  
   <header class="nav" id="nav">
     <a href="/" class="nav-logo">
-      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation logo" />
+      <img src="assets/logoslutstation3-DkYmOYnn.webp" alt="Slutstation logo" width="1500" height="409" decoding="async" />
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="/#events" data-i18n="nav.events">Events</a>
-      <a href="/#about" data-i18n="nav.about">About</a>
-      <a href="/tickets.html" data-i18n="nav.tickets">Tickets</a>
-      <a href="/account.html" data-i18n="nav.myaccount">My account</a>
+      <a href="/#apply" data-i18n="nav.membership">Membership</a>
+      <a href="/#info" data-i18n="nav.info">Info</a>
       <a href="/work.html" data-i18n="nav.work">Work with us</a>
+      <a href="/account.html" data-i18n="nav.account">Account</a>
       <a href="/staff.html" id="navStaff" hidden data-i18n="nav.staff">Staff</a>
       <a href="/admin.html" id="navAdmin" hidden data-i18n="nav.admin">Admin</a>
     </nav>
     <div class="nav-cta">
+      <a href="/tickets.html" class="btn btn-primary btn-sm" data-i18n="nav.tickets">Tickets</a>
       <button class="nav-toggle" id="navToggle" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span><span></span><span></span></button>
     </div>
+    
   </header>
 
   <main class="page acc-page">

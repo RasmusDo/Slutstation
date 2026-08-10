@@ -8,7 +8,7 @@
 // API key stays server-side in the `ebas` Edge Function.
 // ============================================================================
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY, TURNSTILE_SITE_KEY, ENTRY_CODE } from "./supabase-config.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, TURNSTILE_SITE_KEY, ENTRY_CODE, INVITE_CODE, WALLET_CARD } from "./supabase-config.js";
 import { initI18n, t, getLang } from "./i18n.js";
 import { initGlassLight } from "./liquid-glass.js";
 
@@ -33,12 +33,14 @@ let loading = false;
 initI18n(".nav-cta");
 initGlassLight();
 
-// The Supabase SDK is imported DYNAMICALLY, inside a try/catch, on purpose.
-// An ES module is all-or-nothing: a static `import` from a CDN that fails
-// (outage, ad blocker, hotel wifi portal) stops the whole module from ever
-// executing, taking the language switch and every static bit of the page with
-// it. Found by rendering the built page with the network blocked. This way a
-// CDN failure degrades to "the dynamic parts are down" instead of a dead page.
+// The Supabase SDK is BUNDLED — installed from npm and code-split by Vite into
+// a chunk served from our own origin, so no third-party CDN sits in any page's
+// path any more. (It used to load from esm.sh at runtime, which put every page
+// one CDN outage or ad blocker away from a dead screen.)
+//
+// It stays a DYNAMIC import, inside a try/catch, on purpose: the split chunk
+// keeps the first paint light, and a network that dies between the page and
+// the chunk still degrades to "the dynamic parts are down", not a dead page.
 //
 // The 12-second timeout is not paranoia either. A failed request rejects and is
 // caught; a request that is *accepted and then never answered*, a captive
@@ -46,7 +48,7 @@ initGlassLight();
 // the await above it hangs, everything after it never runs, and the page sits
 // on its spinner forever with no error to catch. Racing the import against a
 // clock turns that silent hang into the same visible message as any other
-// failure. Reproduced in headless Chromium, where the CDN request hung open.
+// failure. Reproduced in headless Chromium, where the request hung open.
 const importWithTimeout = (p, ms = 12000) =>
   Promise.race([p, new Promise((_, reject) =>
     setTimeout(() => reject(new Error("SDK load timed out")), ms))]);
@@ -62,7 +64,7 @@ const importWithTimeout = (p, ms = 12000) =>
 // does need a client waits on `sdkReady` instead.
 let supabase = null;
 const sdkReady = importWithTimeout(
-  import("https://esm.sh/@supabase/supabase-js@2.45.4"))
+  import("@supabase/supabase-js"))
   .then(({ createClient }) => {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return true;
@@ -268,6 +270,69 @@ document.querySelectorAll(".acc-tabs .tab").forEach((tab) => {
 });
 
 // ---------------------------------------------------------------------------
+// SIGN-UP WIZARD
+//
+// Presentation only. One <form>, one submit, one code path — the wizard just
+// decides which half is on screen, so the eBas data still arrives complete at
+// signup and no half-registered state exists for a split submission to leave
+// behind. Step 1 is the account (what signing in needs), step 2 is what eBas
+// needs. The Continue gate re-runs the same checks the submit handler makes,
+// so nothing new can pass here and fail there.
+// ---------------------------------------------------------------------------
+function showSignupStep(n) {
+  const s1 = $("signupStep1"), s2 = $("signupStep2");
+  if (!s1 || !s2) return;
+  s1.hidden = n !== 1;
+  s2.hidden = n !== 2;
+  document.querySelectorAll("[data-step-dot]").forEach((d) =>
+    d.classList.toggle("on", Number(d.dataset.stepDot) <= n));
+}
+
+$("signupNext")?.addEventListener("click", () => {
+  const form = $("signupForm");
+  const msg = $("signupMsg1");
+  setMsg(msg, "");
+  for (const f of $("signupStep1").querySelectorAll("[required]")) {
+    if (!f.value.trim()) { markInvalid(f, true); f.focus(); return setMsg(msg, t("err.required")); }
+  }
+  if (!EMAIL_RE.test(form.email.value.trim())) {
+    markInvalid(form.email, true); form.email.focus(); return setMsg(msg, t("err.email"));
+  }
+  if (form.password.value.length < 8) {
+    markInvalid(form.password, true); form.password.focus(); return setMsg(msg, t("err.password"));
+  }
+  showSignupStep(2);
+});
+$("signupBack")?.addEventListener("click", () => showSignupStep(1));
+
+// ---------------------------------------------------------------------------
+// INLINE VALIDATION — judge a field when the visitor leaves it, forgive it
+// the moment they start fixing it. Nothing here blocks anything: the submit
+// handlers keep their own checks, this is just the earlier, kinder mirror.
+// ---------------------------------------------------------------------------
+function markInvalid(field, bad) {
+  field.closest(".field")?.classList.toggle("invalid", !!bad);
+}
+
+["signinForm", "signupForm"].forEach((id) => {
+  const form = $(id);
+  if (!form) return;
+  form.addEventListener("focusout", (e) => {
+    const f = e.target;
+    if (!(f instanceof HTMLElement) || !f.matches("input[required], select[required]")) return;
+    if (f.type === "checkbox") return;   // checkboxes read wrong when flagged mid-form
+    let bad = !f.value.trim();
+    if (!bad && f.type === "email") bad = !EMAIL_RE.test(f.value.trim());
+    if (!bad && f.getAttribute("autocomplete") === "new-password") bad = f.value.length < 8;
+    markInvalid(f, bad);
+  });
+  form.addEventListener("input", (e) => {
+    const f = e.target;
+    if (f instanceof HTMLElement && f.closest(".field.invalid")) markInvalid(f, false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // SIGN IN
 // ---------------------------------------------------------------------------
 $("signinForm")?.addEventListener("submit", async (e) => {
@@ -305,6 +370,12 @@ $("signupForm")?.addEventListener("submit", async (e) => {
   for (const field of form.querySelectorAll("[required]")) {
     const ok = field.type === "checkbox" ? field.checked : field.value.trim();
     if (!ok) {
+      // The failing field may be on the wizard step that isn't showing
+      // (autofill can blank a step-1 field after Continue). Focus on a
+      // hidden element is silently dropped, so reveal its step first.
+      if (field.closest(".acc-step")?.hidden) {
+        showSignupStep(field.closest("#signupStep1") ? 1 : 2);
+      }
       setMsg(msg, t("err.required"));
       field.focus();
       return;
@@ -403,6 +474,33 @@ $("resendBtn")?.addEventListener("click", async () => {
   });
   resetCaptcha("signin");
   setMsg(msg, error ? friendlyAuthError(error) : t("acct.resendSent"), error ? "err" : "ok");
+});
+
+// ---------------------------------------------------------------------------
+// MAGIC LINK — sign in without a password. For a phone in a queue at 2am a
+// link beats remembering anything, and every password never typed is one that
+// can't be phished. shouldCreateUser is false on purpose: signup must stay on
+// the one form that collects what eBas needs, or the link would quietly mint
+// half-registered accounts with no name behind them.
+// ---------------------------------------------------------------------------
+$("magicBtn")?.addEventListener("click", async () => {
+  const msg = $("signinMsg");
+  const email = $("signinForm")?.email.value.trim();
+  if (!EMAIL_RE.test(email || "")) return setMsg(msg, t("acct.resendNeedEmail"));
+
+  setMsg(msg, t("acct.resendSending"), "ok");
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: `${window.location.origin}/account.html`,
+      captchaToken: captchaToken("signin"),
+    },
+  });
+  resetCaptcha("signin");
+  if (error && /signups not allowed/i.test(error.message || ""))
+    return setMsg(msg, t("err.noAccount"));
+  setMsg(msg, error ? friendlyAuthError(error) : t("acct.magicSent"), error ? "err" : "ok");
 });
 
 $("changePwBtn")?.addEventListener("click", async () => {
@@ -746,7 +844,21 @@ async function loadAccountInner() {
     const qrPanel = $("qrPanel");
     if (qrPanel) qrPanel.hidden = false;
     renderEntryQr(session.user.id);
+    refreshTierCard();
   }
+  // Claim any nights that were waiting on this email address before the account
+  // existed. Idempotent and cheap: the rows are deleted as they are claimed, so
+  // every later call finds nothing. It runs BEFORE the codes are fetched,
+  // because claiming can move somebody up a tier and the tier decides which
+  // codes they are owed — the other order would make them wait a page load.
+  const claimed = await supabase.rpc("claim_legacy_attendance");
+  if (claimed?.data) {
+    await Promise.all([refreshStats(), refreshHistory()]);
+  }
+
+  // Skipped in demo mode: that call ASSIGNS, and a demo must never spend one
+  // of fifteen hand-made Billetto codes.
+  if (!demoTier()) refreshRewardCodes();
   await Promise.all([
     refreshMembership(),
     refreshStats(),
@@ -756,6 +868,10 @@ async function loadAccountInner() {
     refreshPromo(),
     showRoleLinks(profile),
   ]);
+
+  // Last, so it paints over a finished page rather than racing it.
+  mountDemo(profile?.role === "admin");
+  applyDemo();
 }
 
 sdkReady.then((ok) => {
@@ -781,6 +897,13 @@ setTimeout(() => { if (!loadedOnce && !recovering) loadAccount(); }, 1200);
 function fmtShort(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString(getLang() === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "short", year: "2-digit" });
+}
+
+// "1 more event" and "2 more events". Written out rather than "event(s)",
+// which is what a form prints when nobody has read it. Swedish takes the same
+// word either way, so the two keys collapse to one string over there.
+function toNextText(n, tier) {
+  return t(n === 1 ? "ms.toNext1" : "ms.toNext", { n, t: tier });
 }
 
 async function refreshStats() {
@@ -811,26 +934,193 @@ async function refreshStats() {
     });
   }
 
+  setTierClass(data.tier ?? 1);
+  renderScarcity(data.tier ?? 1);
+
   const floor = data.tier_floor ?? 0;
   const ceil  = data.next_tier_at;          // null once they're at the top
   const have  = data.events_window ?? 0;
 
   if (ceil == null) {
     $("tierNext").innerHTML = t("ms.topTier");
-    $("tierFill").style.width = "100%";
+    renderTierBar(have, floor, null);
+    renderNextPerk(null, 0);
     $("tierScale").innerHTML = `<span>${floor} ${t("ms.eventsWord")}</span><span>${t("ms.max")}</span>`;
   } else {
     const need = data.events_to_next_tier ?? Math.max(ceil - have, 0);
     $("tierNext").innerHTML = need === 0
       ? t("ms.unlocked")
-      : t("ms.toNext", { n: need, t: data.next_tier });
+      : toNextText(need, data.next_tier);
     // progress within the current band, not from zero, otherwise Tier 3 at
-    // 4/8 events looks like half of nothing.
-    const span = Math.max(ceil - floor, 1);
-    const pct  = Math.min(Math.max((have - floor) / span, 0), 1) * 100;
-    $("tierFill").style.width = pct.toFixed(1) + "%";
+    // 4/6 events looks like two thirds of nothing.
+    renderTierBar(have, floor, ceil);
+    renderNextPerk(data.next_tier, need);
     $("tierScale").innerHTML = `<span>${floor} ${t("ms.eventsWord")}</span><span>${t("ms.tierAt", { t: data.next_tier, n: ceil })}</span>`;
   }
+
+  tierStatsCache = data;
+  renderTierExtras();
+}
+
+// ---------------------------------------------------------------------------
+// THE TIER, PLAYED AS THE GAME IT ALREADY IS
+//
+// Nothing below invents a mechanic. Tiers are earned by turning up, decay as
+// nights age out of the 24-month window, and pay out in real perks — the
+// database has enforced all of that since phase 12. These renderers only stop
+// the page from presenting a progression system as a database row: notches
+// you can watch fill, the next reward named while it is still locked, the
+// date your rank is safe until, and a one-time moment when you go up.
+//
+// Deliberately absent, and it should stay that way: points, badges, streaks,
+// and any leaderboard with names on it (the last one would leak who attends
+// what, which the privacy policy promises not to).
+// ---------------------------------------------------------------------------
+let tierStatsCache = null;    // last member_stats row
+let tierNightsCache = null;   // { nights, milestones } from my_history
+
+function ladderTierName(n) {
+  return $("tierLadder")?.children[n - 1]?.querySelector("b")?.textContent || `Tier ${n}`;
+}
+
+// The card wears its rank: .tier-r1 … .tier-r4 restyle the badge and the
+// card's rim in account.css, so a Tier 4 screenshot doesn't look like a
+// Tier 1 screenshot.
+function setTierClass(tier) {
+  const card = $("tierCard");
+  if (!card) return;
+  for (let i = 1; i <= 4; i++) card.classList.toggle("tier-r" + i, i === tier);
+}
+
+// One notch per night of the current band. Discrete slots filling up is the
+// cheapest honest "game feel" there is, because nights ARE the currency —
+// this is the same numbers the old single fill drew, cut into pieces.
+function renderTierBar(have, floor, ceil) {
+  const bar = $("tierBar");
+  if (!bar) return;
+  bar.classList.add("tier-bar-notched");
+  if (ceil == null) {   // top tier: one solid, full bar
+    bar.innerHTML = `<span class="notch on" style="animation-delay:0.15s"></span>`;
+    return;
+  }
+  const span = Math.max(ceil - floor, 1);
+  const got  = Math.min(Math.max(have - floor, 0), span);
+  bar.innerHTML = Array.from({ length: span }, (_, i) =>
+    `<span class="notch${i < got ? " on" : ""}"${
+      i < got ? ` style="animation-delay:${(0.15 + i * 0.12).toFixed(2)}s"` : ""}></span>`
+  ).join("");
+}
+
+// The next rung's reward, named and padlocked. The text comes straight off
+// the published ladder below it, so this can never promise something the
+// ladder doesn't.
+function renderNextPerk(nextTier, need) {
+  const box = $("tierLock");
+  if (!box) return;
+  const perk = nextTier == null ? null
+    : $("tierLadder")?.children[nextTier - 1]?.querySelector("span")?.textContent;
+  if (!perk) { box.hidden = true; return; }
+  box.hidden = false;
+  box.classList.toggle("almost", need === 1);
+  box.innerHTML = `
+    <svg class="lock" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="4" y="10" width="16" height="11" rx="2.5" stroke="currentColor" stroke-width="2.2"/>
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.2"/>
+    </svg>
+    <span><b>${escHtml(t("ms.perkAt", { tier: ladderTierName(nextTier) }))}</b> ${escHtml(perk)}</span>`;
+}
+
+// "Top 9% of members." Counts only — the RPC (schema-phase19) aggregates and
+// never names anyone. Hidden below Tier 2 (everyone is in the top 100%), and
+// hidden while the association is too small for a percentage to mean much.
+async function renderScarcity(tier) {
+  const el = $("tierRank");
+  if (!el || demoTier()) return;
+  if (!tier || tier < 2) { el.hidden = true; return; }
+  try {
+    const { data, error } = await supabase.rpc("tier_distribution");
+    if (error || !data) { el.hidden = true; return; }
+    let total = 0, atOrAbove = 0;
+    for (let i = 1; i <= 4; i++) {
+      const n = Number(data["tier_" + i] || 0);
+      total += n;
+      if (i >= tier) atOrAbove += n;
+    }
+    if (total < 25 || !atOrAbove) { el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = t("ms.topPct", { p: Math.max(Math.round((atOrAbove / total) * 100), 1) });
+  } catch { el.hidden = true; }
+}
+
+// The two renderers that need BOTH fetches (stats + nights) run from
+// whichever of the two lands second.
+function renderTierExtras() {
+  if (demoTier()) return;   // demo mode paints its own version of everything
+  if (!tierStatsCache || !tierNightsCache) return;
+  renderSafety(tierStatsCache, tierNightsCache.nights || []);
+  maybePromote(tierStatsCache, tierNightsCache.milestones || []);
+}
+
+// Defend-your-rank. Tiers really do decay — attendance is counted over a
+// trailing 24 months — and the page has never once said so. Nights age out
+// oldest first, so with k nights in the window and a floor of F, the tier
+// survives until the (k−F+1)-th oldest night leaves. Inside 90 days that
+// flips from reassurance to a nudge.
+// (my_history caps at 40 nights; for anyone over the cap the date computed
+// here is EARLIER than the truth, which errs on the safe side.)
+function renderSafety(s, nights) {
+  const el = $("tierSafe");
+  if (!el) return;
+  const tier = s.tier ?? 1, floor = s.tier_floor ?? 0;
+  if (tier < 2 || floor < 1) { el.hidden = true; return; }
+
+  const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 24);
+  const win = nights.map((n) => new Date(n.checked_in_at))
+    .filter((d) => d >= cutoff)
+    .sort((a, b) => a - b);
+  if (win.length < floor) { el.hidden = true; return; }
+
+  const jeopardy = new Date(win[win.length - floor]);
+  jeopardy.setMonth(jeopardy.getMonth() + 24);
+  const name = s.tier_name || ladderTierName(tier);
+  const soon = jeopardy.getTime() - Date.now() < 90 * 86400000;
+  el.hidden = false;
+  el.classList.toggle("warn", soon);
+  el.textContent = soon
+    ? t("ms.decayWarn", { date: fmtNight(jeopardy.toISOString()), tier: name })
+    : t("ms.safeUntil", { tier: name, date: fmtNight(jeopardy.toISOString()) });
+}
+
+// The promotion moment. member_events knows the date a tier was reached; a
+// last-seen marker in localStorage knows whether this browser has been shown
+// it. First visit ever stores silently — celebrating a months-old promotion
+// on the day this feature ships would ring false.
+const SEEN_TIER_KEY = "ss-tier-seen";
+
+function maybePromote(s, milestones) {
+  const tier = s.tier ?? 1;
+  let seen = null;
+  try { seen = localStorage.getItem(SEEN_TIER_KEY); } catch {}
+  if (seen == null || tier < Number(seen)) {
+    try { localStorage.setItem(SEEN_TIER_KEY, String(tier)); } catch {}
+    return;
+  }
+  if (tier === Number(seen)) return;
+  try { localStorage.setItem(SEEN_TIER_KEY, String(tier)); } catch {}
+  const m = (milestones || []).find((x) => x.kind === "tier_up" && x.tier === tier);
+  showPromo(s.tier_name || ladderTierName(tier), m?.occurred_at || null);
+}
+
+function showPromo(name, iso) {
+  const box = $("tierPromo");
+  if (!box) return;
+  box.hidden = false;
+  box.innerHTML = `<b>${escHtml(t("ms.promoT"))}</b> <span>${escHtml(
+    iso ? t("ms.promoB", { tier: name, date: fmtNight(iso) })
+        : t("ms.promoBNoDate", { tier: name }))}</span>`;
+  box.classList.remove("play");
+  void box.offsetWidth;
+  box.classList.add("play");
 }
 
 // ---------------------------------------------------------------------------
@@ -843,6 +1133,9 @@ async function refreshStats() {
 // ---------------------------------------------------------------------------
 function renderReferral(data) {
   const wrap = $("referWrap");
+  // Dormant, deliberately. The referral data keeps accumulating server-side;
+  // this is only about whether anybody is shown a code they cannot yet spend.
+  if (!INVITE_CODE) { if (wrap) wrap.hidden = true; return; }
   if (!wrap || !data.referral_code) return;
   wrap.hidden = false;
   $("refCode").textContent = data.referral_code;
@@ -898,8 +1191,58 @@ $("qrSave")?.addEventListener("click", () => {
   if (!canvas) return;
   const a = document.createElement("a");
   a.href = canvas.toDataURL("image/png");
-  a.download = "slutstation-entry-code.png";
+  a.download = "slutstation-tier-code.png";
   a.click();
+});
+
+// ---------------------------------------------------------------------------
+// APPLE WALLET
+//
+// Same code, on a card that keeps itself current: the wallet Edge Function
+// signs a .pkpass carrying this account's id as the QR, and pushes a fresh
+// one whenever the tier, the nights or tonight's perks change.
+//
+// Dormant behind WALLET_CARD (supabase-config.js) until pass signing exists:
+// the button is only drawn once the switch is on, and even then a server
+// without certificates answers 503, which degrades to a message rather than
+// a broken download. Two layers, because a switch flipped early and a
+// certificate that expires are different failures.
+// ---------------------------------------------------------------------------
+if (WALLET_CARD) {
+  const w = $("walletWrap");
+  if (w) w.hidden = false;
+}
+
+$("walletBtn")?.addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  const m = $("walletMsg");
+  setMsg(m, "");
+  btn.disabled = true;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/wallet`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session?.access_token || ""}`,
+      },
+    });
+    if (!res.ok) {
+      setMsg(m, res.status === 503 ? t("acct.walletSoon") : t("acct.walletFail"));
+      return;
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "slutstation.pkpass";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    setMsg(m, t("acct.walletOk"), "ok");
+  } catch {
+    setMsg(m, t("acct.walletFail"));
+  } finally {
+    btn.disabled = false;
+  }
 });
 
 async function refreshHistory() {
@@ -910,6 +1253,13 @@ async function refreshHistory() {
   if (error) { console.warn("my_history:", error.message); return; }
 
   const nights = data?.nights || [];
+
+  // The tier card's decay line and promotion moment need these nights and
+  // milestones; cached even when empty so renderTierExtras can conclude
+  // "nothing to say" rather than waiting forever.
+  tierNightsCache = { nights, milestones: data?.milestones || [] };
+  renderTierExtras();
+
   if (!nights.length) return;          // stays hidden until there is something to say
 
   panel.hidden = false;
@@ -959,7 +1309,7 @@ async function renderEntryQr(userId) {
   const canvas = $("memberQr");
   if (!canvas) return;
   try {
-    const QR = (await import("https://esm.sh/qrcode@1.5.4")).default;
+    const QR = (await import("qrcode")).default;
     await QR.toCanvas(canvas, userId, {
       width: 220, margin: 1,
       color: { dark: "#0a0b0f", light: "#ffffff" },
@@ -1026,7 +1376,7 @@ async function refreshTickets() {
     </div>`).join("");
 
   try {
-    const QR = (await import("https://esm.sh/qrcode@1.5.4")).default;
+    const QR = (await import("qrcode")).default;
     for (const c of host.querySelectorAll("canvas[data-qr]")) {
       await QR.toCanvas(c, c.dataset.qr, {
         width: 168, margin: 1, color: { dark: "#0a0b0f", light: "#ffffff" },
@@ -1419,3 +1769,286 @@ $("detailsAlertBtn")?.addEventListener("click", () => {
 
 // The labels inside are translated, so a language switch has to redraw them.
 document.addEventListener("ss:lang", () => { if (lastProfile) applyDetailsState(lastProfile); });
+
+// ---------------------------------------------------------------------------
+// WHAT THE CODE IS WORTH TONIGHT
+//
+// The QR is no longer an entry code. Attendance is imported from the Billetto
+// export after the night rather than scanned at the door, so this code's job
+// is to prove a tier and carry what that tier is owed: the wardrobe at 2, a
+// soft drink as well at 3.
+//
+// Claimed state is shown here for one reason — so nobody walks up to the bar
+// for a second Red Bull and has to be told no in front of a queue. If it has
+// been used, their own page says so, with the time.
+// ---------------------------------------------------------------------------
+const PERK_LABEL = { wardrobe: "acct.perkWardrobe", drink: "acct.perkDrink" };
+
+async function refreshTierCard() {
+  const list = $("perkList");
+  if (!list) return;
+
+  const { data, error } = await supabase.rpc("my_tier_card");
+  if (error || !data) { list.hidden = true; return; }
+
+  const perks = data.perks || [];
+  // Tier 1 gets a nudge rather than an empty list. Showing somebody a list of
+  // things they cannot have is a worse read than telling them what is one
+  // night away.
+  if (!perks.length) {
+    list.hidden = false;
+    list.innerHTML = `<li class="perk-none">${escHtml(t("acct.perkNone"))}</li>`;
+    return;
+  }
+
+  const claimed = new Map((data.claimed || []).map((c) => [c.perk, c.claimed_at]));
+  const time = (iso) => new Date(iso).toLocaleTimeString(
+    getLang() === "sv" ? "sv-SE" : "en-GB", { hour: "2-digit", minute: "2-digit" });
+
+  list.hidden = false;
+  list.innerHTML =
+    `<li class="perk-head">${escHtml(t("acct.perkTitle"))}</li>` +
+    perks.map((p) => {
+      const at = claimed.get(p);
+      // Only an event happening today can have claims against it, so outside
+      // an event night every perk correctly reads as unused.
+      const state = at ? t("acct.perkClaimed", { time: time(at) }) : t("acct.perkOpen");
+      return `<li class="perk${at ? " is-used" : ""}">
+                <span>${escHtml(t(PERK_LABEL[p] || p))}</span><small>${escHtml(state)}</small>
+              </li>`;
+    }).join("");
+}
+
+document.addEventListener("ss:lang", () => { if (loadedOnce) refreshTierCard(); });
+
+
+// ---------------------------------------------------------------------------
+// REWARD CODES
+//
+// Behind a tap rather than printed on the page. Not because revealing it twice
+// is dangerous — you can show it as often as you like, there is nothing to
+// protect by limiting that — but because an account page gets opened in a
+// queue with people standing behind you, and this is the one thing on it worth
+// money to a stranger.
+//
+// What is deliberately NOT shown: the size of the discount on a Tier 4 code,
+// and how many tickets either code covers. Both live in Billetto, which
+// enforces them. The site describes what a tier unlocks in words the
+// collective can honour at any future event rather than a number it might not
+// be able to afford next time.
+// ---------------------------------------------------------------------------
+const CODE_LABEL = { tier3: "acct.codeTier3", tier4: "acct.codeTier4" };
+
+// One row, built the same way for a real code and for a demo one. Shared on
+// purpose: demo mode exists to be filmed, and footage of a layout that is not
+// quite the layout members get is worse than no footage.
+function codeRowHtml(kind, code) {
+  const label = escHtml(t(CODE_LABEL[kind] || kind));
+  // Earned but the pool is empty. Tell them it is coming rather than showing a
+  // blank row that looks broken.
+  if (!code) return `<div class="code-row is-waiting">
+      <span class="code-what">${label}</span>
+      <small>${escHtml(t("acct.codeSoon"))}</small></div>`;
+  const useNote = escHtml(t(kind === "tier4" ? "acct.codeUse4" : "acct.codeUse3"));
+  return `<div class="code-row" data-kind="${escHtml(kind)}">
+      <span class="code-what">${label}</span>
+      <small class="code-use">${useNote}</small>
+      <code class="code-value" hidden>${escHtml(code)}</code>
+      <span class="code-actions">
+        <button type="button" class="btn btn-ghost btn-sm" data-reveal="${escHtml(kind)}">${escHtml(t("acct.codeShow"))}</button>
+        <button type="button" class="btn btn-primary btn-sm" data-copy="${escHtml(code)}" hidden>${escHtml(t("acct.codeCopy"))}</button>
+      </span>
+    </div>`;
+}
+
+// Show/hide and copy. Unlimited reveals, deliberately: there is nothing to
+// protect by limiting them, and a member checking their code twice in a queue
+// should not be made to feel they are doing something wrong.
+function wireCodeBox(box) {
+  box.querySelectorAll("[data-reveal]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const row = b.closest(".code-row");
+      const val = row.querySelector(".code-value");
+      const copy = row.querySelector("[data-copy]");
+      const showing = !val.hidden;
+      val.hidden = showing;
+      copy.hidden = showing;
+      b.textContent = t(showing ? "acct.codeShow" : "acct.codeHide");
+    })
+  );
+
+  box.querySelectorAll("[data-copy]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const code = b.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(code);
+      } catch (e) {
+        // Safari without permission, or an insecure origin. A selected range
+        // is still something the member can hit cmd-C on, which beats a
+        // button that silently does nothing.
+        const r = document.createRange();
+        r.selectNodeContents(b.closest(".code-row").querySelector(".code-value"));
+        const sel = window.getSelection();
+        sel.removeAllRanges(); sel.addRange(r);
+      }
+      const was = b.textContent;
+      b.textContent = t("acct.codeCopied");
+      setTimeout(() => { b.textContent = was; }, 1600);
+    })
+  );
+}
+
+async function refreshRewardCodes() {
+  const box = $("codeList");
+  if (!box) return;
+
+  // This call ASSIGNS on first look, so it is the thing that actually hands a
+  // member their code. Failing quietly is right: a network blip should not
+  // show somebody an error about a reward.
+  const { data, error } = await supabase.rpc("my_reward_codes");
+  if (error || !data) { box.hidden = true; return; }
+
+  const earned = data.earned || [];
+  if (!earned.length) { box.hidden = true; return; }   // nothing at this tier
+
+  const held = new Map((data.codes || []).map((c) => [c.kind, c.code]));
+
+  box.hidden = false;
+  box.innerHTML =
+    `<p class="code-head">${escHtml(t("acct.codesTitle"))}</p>` +
+    earned.map((kind) => codeRowHtml(kind, held.get(kind))).join("") +
+    `<p class="code-note">${escHtml(t("acct.codeMine"))}</p>`;
+
+  wireCodeBox(box);
+}
+
+document.addEventListener("ss:lang", () => { if (loadedOnce) refreshRewardCodes(); });
+
+
+// ---------------------------------------------------------------------------
+// DEMO MODE
+//
+// For filming, and for showing someone what Tier 4 looks like without waiting
+// two years to earn it. Admins only.
+//
+// It is deliberately ENTIRELY CLIENT SIDE. It writes nothing, calls no RPC,
+// and above all never takes a real code out of the pool — the codes it shows
+// are obvious fakes. A demo that quietly consumed one of fifteen hand-made
+// Billetto codes would be a bad trade for a nice screenshot.
+//
+// Kept in sessionStorage, so it dies with the tab. A persisted demo mode is one
+// somebody leaves on, and then reads their own tier off a page that was lying
+// to them. For the same reason there is a badge on screen the whole time it is
+// running: if it ends up in footage, the footage says DEMO on it.
+// ---------------------------------------------------------------------------
+const DEMO_KEY = "ss-demo-tier";
+// Not real codes, and unmistakably so. Same shape as the real ones so the
+// layout is honest, but nobody could paste one into Billetto by accident.
+const DEMO_CODES = { tier3: "DEMO20OFFDEMO", tier4: "DEMOTIER4DEMO" };
+// Must match tier_threshold() in the database. Demo mode is the one place the
+// numbers are not read from the server, because the whole point is to draw a
+// tier the signed-in admin has not earned.
+const DEMO_THRESHOLDS = { 1: 0, 2: 2, 3: 4, 4: 6 };
+
+function demoTier() {
+  try { return Number(sessionStorage.getItem(DEMO_KEY)) || 0; } catch (e) { return 0; }
+}
+
+function mountDemo(isAdmin) {
+  const host = $("demoBar");
+  if (!host || !isAdmin) return;
+  host.hidden = false;
+  const now = demoTier();
+  host.innerHTML =
+    `<div class="demo-head"><strong>${escHtml(t("acct.demoTitle"))}</strong>
+       <small>${escHtml(t("acct.demoLead"))}</small></div>
+     <div class="demo-picks">
+       <button type="button" class="btn btn-ghost btn-sm${now === 0 ? " is-on" : ""}" data-demo="0">${escHtml(t("acct.demoOff"))}</button>
+       ${[1,2,3,4].map((n) => `<button type="button" class="btn btn-ghost btn-sm${now === n ? " is-on" : ""}" data-demo="${n}">Tier ${n}</button>`).join("")}
+     </div>`;
+  host.querySelectorAll("[data-demo]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const n = Number(b.dataset.demo);
+      try { n ? sessionStorage.setItem(DEMO_KEY, String(n)) : sessionStorage.removeItem(DEMO_KEY); } catch (e) {}
+      // Reload rather than patch: the real render runs on load, so this is the
+      // one path where demo and reality cannot end up half-mixed on screen.
+      location.reload();
+    })
+  );
+}
+
+function applyDemo() {
+  const tier = demoTier();
+  if (!tier) { document.body.classList.remove("demo-on"); return; }
+  document.body.classList.add("demo-on");
+
+  if ($("tierBadge")) $("tierBadge").textContent = `Tier ${tier}`;
+  const ladder = $("tierLadder");
+  if (ladder) [...ladder.children].forEach((li, i) => {
+    li.classList.toggle("is-you", i + 1 === tier);
+    li.classList.toggle("is-done", i + 1 < tier);
+  });
+
+  const floor = DEMO_THRESHOLDS[tier] ?? 0;
+  const next  = DEMO_THRESHOLDS[tier + 1];
+  // The demo pretends they are one night past the floor. Everything else on
+  // the card is then derived rather than invented, so the badge, the bar, the
+  // scale and the two counters cannot contradict each other on camera — which
+  // is the entire reason this mode exists.
+  const have = floor + (next == null ? 0 : 1);
+  const need = next == null ? 0 : Math.max(next - have, 0);
+  if ($("statWindow")) $("statWindow").textContent = have;
+  if ($("statTotal"))  $("statTotal").textContent  = have;
+  if ($("tierNext")) $("tierNext").innerHTML = next == null ? t("ms.topTier") : toNextText(need, tier + 1);
+  if ($("tierScale")) $("tierScale").innerHTML =
+    `<span>${floor} ${t("ms.eventsWord")}</span><span>${next == null ? t("ms.max") : t("ms.tierAt", { t: tier + 1, n: next })}</span>`;
+
+  // The same game-feel layer the real card gets, derived from the same demo
+  // numbers so nothing on camera can contradict anything else.
+  setTierClass(tier);
+  renderTierBar(have, floor, next ?? null);
+  renderNextPerk(next == null ? null : tier + 1, need);
+  const rankEl = $("tierRank");
+  if (rankEl) {
+    const fakePct = { 2: 31, 3: 11, 4: 3 }[tier];
+    rankEl.hidden = !fakePct;
+    if (fakePct) rankEl.textContent = t("ms.topPct", { p: fakePct });
+  }
+  const safeEl = $("tierSafe");
+  if (safeEl) {
+    if (tier >= 2) {
+      const d = new Date(); d.setMonth(d.getMonth() + 14);
+      safeEl.hidden = false;
+      safeEl.classList.remove("warn");
+      safeEl.textContent = t("ms.safeUntil", { tier: `Tier ${tier}`, date: fmtNight(d.toISOString()) });
+    } else safeEl.hidden = true;
+  }
+  // The demo always plays the promotion banner: it exists to be filmed.
+  showPromo(`Tier ${tier}`, new Date().toISOString());
+
+  // Perks, drawn from the same rule the server uses so the demo cannot drift
+  // from the real thing.
+  const perks = tier >= 3 ? ["wardrobe", "drink"] : tier >= 2 ? ["wardrobe"] : [];
+  const list = $("perkList");
+  if (list) {
+    list.hidden = false;
+    list.innerHTML = perks.length
+      ? `<li class="perk-head">${escHtml(t("acct.perkTitle"))}</li>` +
+        perks.map((p) => `<li class="perk"><span>${escHtml(t(PERK_LABEL[p]))}</span><small>${escHtml(t("acct.perkOpen"))}</small></li>`).join("")
+      : `<li class="perk-none">${escHtml(t("acct.perkNone"))}</li>`;
+  }
+
+  const kinds = tier >= 4 ? ["tier3", "tier4"] : tier >= 3 ? ["tier3"] : [];
+  const box = $("codeList");
+  if (box) {
+    box.hidden = !kinds.length;
+    box.innerHTML = kinds.length
+      ? `<p class="code-head">${escHtml(t("acct.codesTitle"))}</p>` +
+        kinds.map((k) => codeRowHtml(k, DEMO_CODES[k])).join("") +
+        `<p class="code-note">${escHtml(t("acct.codeMine"))}</p>`
+      : "";
+    // Live buttons, not a disabled stand-in: the point of demo mode is to be
+    // able to film somebody pressing Show, and the code behind it is fake.
+    if (kinds.length) wireCodeBox(box);
+  }
+}

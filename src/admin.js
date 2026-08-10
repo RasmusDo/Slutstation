@@ -14,10 +14,11 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
 import { initGlassLight } from "./liquid-glass.js";
 initGlassLight();
 
-// Dynamic, timed out, and caught — the same shape as the other four pages. A
-// static import from a CDN is all-or-nothing: if esm.sh is unreachable the
-// whole module never runs and the panel is a blank page with nothing on it to
-// say why. (This one stays in English on purpose, like the rest of the panel.)
+// Dynamic, timed out, and caught — the same shape as the other four pages.
+// The SDK is bundled from npm now (a Vite code-split chunk from our own
+// origin, no esm.sh in the path); the guard stays because a network that dies
+// between the page and the chunk still deserves a message rather than a blank
+// panel. (This one stays in English on purpose, like the rest of the panel.)
 const importWithTimeout = (p, ms = 12000) =>
   Promise.race([p, new Promise((_, reject) =>
     setTimeout(() => reject(new Error("SDK load timed out")), ms))]);
@@ -33,7 +34,7 @@ const importWithTimeout = (p, ms = 12000) =>
 // does need a client waits on `sdkReady` instead.
 let supabase = null;
 const sdkReady = importWithTimeout(
-  import("https://esm.sh/@supabase/supabase-js@2.45.4"))
+  import("@supabase/supabase-js"))
   .then(({ createClient }) => {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return true;
@@ -65,7 +66,7 @@ const fmtDT = (iso) => iso ? new Date(iso).toLocaleString("sv-SE", { day: "numer
 const kr = (ore) => (Number(ore || 0) / 100).toFixed(0) + " kr";
 
 function show(id) {
-  ["stateLoading", "stateDenied", "stateAdmin"].forEach((s) => {
+  ["stateLoading", "stateDenied", "stateMfa", "stateAdmin"].forEach((s) => {
     const el = $(s); if (el) el.hidden = s !== id;
   });
 }
@@ -85,6 +86,7 @@ document.querySelectorAll("[data-panel]").forEach((tab) => {
     // the page is open, so it re-reads on every visit rather than at boot only.
     if (tab.dataset.panel === "crew") loadCrew();
     if (tab.dataset.panel === "apply") loadApplications();
+    if (tab.dataset.panel === "stats") loadStats();
   });
 });
 
@@ -267,9 +269,41 @@ async function openUser(id) {
     : `<p class="ops-empty">Hasn't been to an event yet.</p>`;
 
   renderTimeline(id);
+  renderDoorNote(id);
 
   $("userDetail").scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+// ---------------------------------------------------------------------------
+// DOOR NOTE — one per member, admin-written, staff-read on shift (phase 18).
+// ---------------------------------------------------------------------------
+async function renderDoorNote(userId) {
+  const box = $("doorNote");
+  if (!box) return;
+  box.value = "";
+  const { data, error } = await supabase.from("profile_notes")
+    .select("note, written_at").eq("user_id", userId).maybeSingle();
+  if (error) { msg($("doorNoteMsg"), "Notes need schema-phase18 applied."); return; }
+  msg($("doorNoteMsg"), data?.written_at ? `Written ${fmtDay(data.written_at)}.` : "", "ok");
+  if (data?.note) box.value = data.note;
+}
+
+$("doorNoteSave")?.addEventListener("click", async () => {
+  if (!selectedUser) return;
+  const note = $("doorNote")?.value.trim();
+  if (!note) return msg($("doorNoteMsg"), "Nothing to save — use Clear to remove a note.");
+  const { error } = await supabase.from("profile_notes").upsert({
+    user_id: selectedUser, note, written_by: me?.id, written_at: new Date().toISOString(),
+  });
+  msg($("doorNoteMsg"), error ? error.message : "Saved. Door staff see it on their next lookup.", error ? "err" : "ok");
+});
+
+$("doorNoteClear")?.addEventListener("click", async () => {
+  if (!selectedUser) return;
+  const { error } = await supabase.from("profile_notes").delete().eq("user_id", selectedUser);
+  if ($("doorNote")) $("doorNote").value = "";
+  msg($("doorNoteMsg"), error ? error.message : "Cleared.", error ? "err" : "ok");
+});
 
 // ---------------------------------------------------------------------------
 // MEMBER TIMELINE
@@ -473,8 +507,180 @@ async function openEvent(id) {
       if (err) alert(err.message); else await openEvent(id);
     })
   );
+  renderCosts(id);
+  renderIncidents(id);
   $("eventDetail").scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+// ---------------------------------------------------------------------------
+// REPORTS FROM THE DOOR (phase 18) — read-only here; the writing end is one
+// button on the staff page. Reporter names come from a second small query
+// because incident_reports carries ids, not names.
+// ---------------------------------------------------------------------------
+const INCIDENT_LABEL = {
+  refused_entry: "Refused entry", incident: "Incident",
+  capacity: "Capacity reached", other: "Other",
+};
+
+async function renderIncidents(eventId) {
+  const host = $("evIncidents");
+  if (!host) return;
+  const { data, error } = await supabase.from("incident_reports")
+    .select("kind, note, created_at, reported_by").eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    host.innerHTML = `<p class="ops-empty">Reports need schema-phase18-door-notes-incidents.sql applied.</p>`;
+    return;
+  }
+  if (!data?.length) {
+    host.innerHTML = `<p class="ops-empty">Nothing filed. A quiet night is a good night.</p>`;
+    return;
+  }
+  const ids = [...new Set(data.map((r) => r.reported_by).filter(Boolean))];
+  const names = {};
+  if (ids.length) {
+    const { data: ppl } = await supabase.from("profiles")
+      .select("id, first_name, last_name").in("id", ids);
+    (ppl || []).forEach((p) => {
+      names[p.id] = [p.first_name, p.last_name].filter(Boolean).join(" ");
+    });
+  }
+  host.innerHTML = data.map((r) => `
+    <div class="ops-row">
+      <div><strong>${esc(INCIDENT_LABEL[r.kind] || r.kind)}</strong>
+        <small>${fmtDT(r.created_at)}${r.reported_by ? " · " + esc(names[r.reported_by] || "staff") : ""}</small>
+        ${r.note ? `<small style="display:block;">${esc(r.note)}</small>` : ""}
+      </div>
+    </div>`).join("");
+}
+
+// ---------------------------------------------------------------------------
+// WHAT THE NIGHT COST
+//
+// Plain table access under admin RLS (schema-phase17): line items in ore,
+// cost or income, with the net at the bottom. Billetto's money never touches
+// this database, so the payout is entered as income by hand — this card is
+// bookkeeping for the board, not a payment system.
+// ---------------------------------------------------------------------------
+async function renderCosts(eventId) {
+  const host = $("evCosts");
+  if (!host) return;
+  const { data, error } = await supabase.from("event_costs")
+    .select("id, kind, label, amount_ore").eq("event_id", eventId)
+    .order("created_at");
+  if (error) {
+    host.innerHTML = `<p class="ops-empty">Costs need schema-phase17-admin-costs-stats.sql applied.</p>`;
+    return;
+  }
+  const rows = data || [];
+  if (!rows.length) {
+    host.innerHTML = `<p class="ops-empty">No lines yet. Venue, sound, artists, security — and the payout as income.</p>`;
+    return;
+  }
+  const net = rows.reduce((a, r) => a + (r.kind === "income" ? 1 : -1) * Number(r.amount_ore), 0);
+  host.innerHTML = rows.map((r) => `
+    <div class="ops-row">
+      <div><strong>${esc(r.label)}</strong><small>${r.kind === "income" ? "income" : "cost"}</small></div>
+      <div class="ops-actions">
+        <span class="pill">${r.kind === "income" ? "+" : "−"}${kr(r.amount_ore)}</span>
+        <button class="acc-link" data-cost-rm="${esc(r.id)}">Remove</button>
+      </div>
+    </div>`).join("") + `
+    <div class="ops-row">
+      <div><strong>${net >= 0 ? "Surplus" : "Shortfall"}</strong><small>income minus costs</small></div>
+      <span class="pill">${net >= 0 ? "+" : "−"}${kr(Math.abs(net))}</span>
+    </div>`;
+  host.querySelectorAll("[data-cost-rm]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      const { error: err } = await supabase.from("event_costs").delete().eq("id", b.dataset.costRm);
+      if (err) alert(err.message); else renderCosts(eventId);
+    })
+  );
+}
+
+$("costAdd")?.addEventListener("click", async () => {
+  const m = $("costMsg");
+  const label = $("costLabel")?.value.trim();
+  const amountKr = Number($("costAmount")?.value);
+  const kind = $("costKind")?.value === "income" ? "income" : "cost";
+  if (!currentEvent) return msg(m, "Open an event first.");
+  if (!label || !(amountKr > 0)) return msg(m, "A line and an amount, both.");
+  msg(m, "");
+  const { error } = await supabase.from("event_costs").insert({
+    event_id: currentEvent, kind, label,
+    amount_ore: Math.round(amountKr * 100), created_by: me?.id,
+  });
+  if (error) return msg(m, error.message);
+  $("costLabel").value = ""; $("costAmount").value = "";
+  renderCosts(currentEvent);
+});
+
+// ---------------------------------------------------------------------------
+// STATS — aggregates of what the database has known all along. The bars are
+// the same .tier-bar component the Overview's tier spread already uses.
+// ---------------------------------------------------------------------------
+async function loadStats() {
+  const su = $("statSignups"), at = $("statAttendance");
+  if (!su || !at) return;
+  const { data, error } = await supabase.rpc("admin_stats");
+  if (error || !data) {
+    su.innerHTML = `<p class="ops-empty">Stats need schema-phase17-admin-costs-stats.sql applied.</p>`;
+    at.innerHTML = "";
+    return;
+  }
+
+  const weeks = data.signups_by_week || [];
+  const maxW = Math.max(...weeks.map((w) => w.n), 1);
+  su.innerHTML = weeks.length ? weeks.map((w) => `
+    <div class="ops-row">
+      <div style="min-width:110px;"><strong>${esc(w.wk)}</strong><small>week starting</small></div>
+      <div style="flex:1;max-width:300px;"><div class="tier-bar"><span style="width:${((w.n / maxW) * 100).toFixed(0)}%"></span></div></div>
+      <span class="pill">${w.n}</span>
+    </div>`).join("") : `<p class="ops-empty">No signups in the last twelve weeks.</p>`;
+
+  const evs = (data.attendance_by_event || []).slice().reverse();   // newest first
+  const maxA = Math.max(...evs.map((e) => e.n), ...evs.map((e) => e.capacity || 0), 1);
+  at.innerHTML = evs.length ? evs.map((e) => `
+    <div class="ops-row">
+      <div style="min-width:150px;"><strong>${esc(e.name)}</strong><small>${esc(fmtDay(e.starts_at))}</small></div>
+      <div style="flex:1;max-width:300px;"><div class="tier-bar"><span style="width:${((e.n / maxA) * 100).toFixed(0)}%"></span></div></div>
+      <span class="pill">${e.n}${e.capacity ? " / " + e.capacity : ""}</span>
+    </div>`).join("") : `<p class="ops-empty">No past events yet.</p>`;
+}
+
+// ---------------------------------------------------------------------------
+// TEST EMAILS — one copy to the address in the box, marking nobody. The
+// functions verify the session's admin role server-side (see the "second
+// door" comment in each function); the cron secret never leaves the server.
+// ---------------------------------------------------------------------------
+async function sendTestEmail(fn, body, btn) {
+  const m = $("testEmailMsg");
+  const to = $("testEmailTo")?.value.trim();
+  if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) return msg(m, "Enter an address first.");
+  btn.disabled = true;
+  msg(m, "Sending…", "ok");
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session?.access_token || ""}`,
+      },
+      body: JSON.stringify({ ...body, to }),
+    });
+    const j = await res.json().catch(() => ({}));
+    msg(m, res.ok ? "Sent — check that inbox." : (j.error || `Failed (${res.status})`), res.ok ? "ok" : "err");
+  } catch (e) {
+    msg(m, "Couldn't reach the function.");
+  }
+  btn.disabled = false;
+}
+$("testDigest")?.addEventListener("click", (e) => sendTestEmail("weekly-digest", {}, e.currentTarget));
+$("testWelcome")?.addEventListener("click", (e) => sendTestEmail("member-emails", { action: "test" }, e.currentTarget));
+$("testAnnounce")?.addEventListener("click", (e) => sendTestEmail("event-emails", {}, e.currentTarget));
 
 // ---------------------------------------------------------------------------
 // ATTENDANCE IMPORT (Billetto export)
@@ -542,7 +748,7 @@ function parseDelimited(text) {
 async function parseFile(file) {
   const name = (file.name || "").toLowerCase();
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-    const XLSX = await import("https://esm.sh/xlsx@0.18.5");
+    const XLSX = await import("xlsx");
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
     const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -1419,11 +1625,134 @@ async function boot() {
   if (profile?.role !== "admin") { show("stateDenied"); return; }
   me = profile;
 
+  // Two-factor gate. An admin with a verified factor arrives here as aal1
+  // (password only), and phase 15 makes every admin RPC refuse that session —
+  // so the panel asks for the code up front rather than letting each call
+  // fail with "Not authorised". Admins without a factor sail through, which
+  // is what makes enrolment opt-in per admin instead of a flag day.
+  try {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      show("stateMfa");
+      $("mfaCode")?.focus();
+      return;   // finishBoot() runs after the code checks out
+    }
+  } catch (e) { /* no MFA support in this session: the server still decides */ }
+
+  await finishBoot();
+}
+
+async function finishBoot() {
   show("stateAdmin");
   await Promise.all([loadOverview(), loadEvents(), loadUsers(true), loadFloat()]);
   await loadTickets();   // needs the event dropdown loadEvents fills in
   showTonight();
   refreshApplyBadge();
+  loadMfaCard();
+  // Default the test-email box to the admin's own inbox.
+  const { data: { session } } = await supabase.auth.getSession();
+  if ($("testEmailTo") && !$("testEmailTo").value && session?.user?.email) {
+    $("testEmailTo").value = session.user.email;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// MFA — the code prompt at the door, and the Security card inside.
+//
+// Enrolment and verification are Supabase Auth's own factor machinery; the
+// server-side half (is_admin() demanding aal2 once a factor exists) is
+// schema-phase15-admin-mfa.sql. A lost authenticator is fixed by the OTHER
+// admin deleting the factor row in the dashboard — the same two-can-rescue-
+// each-other model the protected-admins rule uses.
+// ---------------------------------------------------------------------------
+$("mfaForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = $("mfaCode")?.value.trim();
+  const m = $("mfaMsg");
+  if (!/^\d{6}$/.test(code || "")) return msg(m, "Six digits.");
+  msg(m, "Checking…", "ok");
+  const { data: f } = await supabase.auth.mfa.listFactors();
+  const factor = f?.totp?.[0];
+  if (!factor) return msg(m, "No factor on this account. Reload and sign in again.");
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+  if (error) return msg(m, "Wrong code — try the next one your app shows.");
+  msg(m, "");
+  await finishBoot();
+});
+
+async function loadMfaCard() {
+  const host = $("mfaCard");
+  if (!host) return;
+  let factors = null;
+  try { factors = (await supabase.auth.mfa.listFactors()).data; } catch (e) {}
+  const totp = factors?.totp?.[0];
+
+  if (totp) {
+    host.innerHTML = `
+      <div class="ops-row">
+        <div><strong>Two-factor is on</strong><small>Enrolled ${esc(fmtDay(totp.created_at))} · every admin action requires the code</small></div>
+        <button class="btn btn-ghost btn-sm" id="mfaOff">Remove</button>
+      </div>`;
+    $("mfaOff").addEventListener("click", async () => {
+      if (!confirm("Remove two-factor? Your admin rights go back to password-only.")) return;
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: totp.id });
+      if (error) return alert("Couldn't remove it: " + error.message);
+      loadMfaCard();
+    });
+    return;
+  }
+
+  host.innerHTML = `
+    <div class="ops-row">
+      <div><strong>Two-factor is off</strong><small>A phished password is currently enough to run this panel</small></div>
+      <button class="btn btn-primary btn-sm" id="mfaOn">Turn on</button>
+    </div>
+    <div id="mfaEnroll"></div>`;
+  $("mfaOn").addEventListener("click", startMfaEnroll);
+}
+
+async function startMfaEnroll() {
+  const box = $("mfaEnroll");
+
+  // An abandoned enrolment leaves an unverified factor behind, and a second
+  // enroll() then fails on the duplicate name. Sweep those out first.
+  try {
+    const { data: f } = await supabase.auth.mfa.listFactors();
+    for (const stale of (f?.all || []).filter((x) => x.status === "unverified")) {
+      await supabase.auth.mfa.unenroll({ factorId: stale.id });
+    }
+  } catch (e) {}
+
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: "totp", friendlyName: "Slutstation admin",
+  });
+  if (error) { box.innerHTML = `<p class="form-msg err">${esc(error.message)}</p>`; return; }
+
+  box.innerHTML = `
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:14px;">
+      <img src="${data.totp.qr_code}" alt="Scan this QR with your authenticator app" width="150" height="150" style="border-radius:8px;background:#fff;padding:6px;" />
+      <div style="flex:1;min-width:220px;">
+        <p style="color:var(--muted);font-size:0.9rem;">Scan with your authenticator app, or paste the secret by hand:</p>
+        <code style="word-break:break-all;font-size:0.78rem;">${esc(data.totp.secret)}</code>
+        <div class="field" style="max-width:200px;margin-top:10px;">
+          <input id="mfaEnrollCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" />
+        </div>
+        <div class="form-actions" style="margin-top:10px;">
+          <button class="btn btn-primary btn-sm" id="mfaEnrollGo">Confirm</button>
+          <span class="form-msg" id="mfaEnrollMsg"></span>
+        </div>
+      </div>
+    </div>`;
+
+  $("mfaEnrollGo").addEventListener("click", async () => {
+    const code = $("mfaEnrollCode")?.value.trim();
+    const m = $("mfaEnrollMsg");
+    if (!/^\d{6}$/.test(code || "")) return msg(m, "Six digits.");
+    const { error: vErr } = await supabase.auth.mfa.challengeAndVerify({ factorId: data.id, code });
+    if (vErr) return msg(m, "That code didn't match — try the next one your app shows.");
+    msg(m, "On. From your next sign-in the panel asks for the code.", "ok");
+    loadMfaCard();
+  });
 }
 
 // ---------------------------------------------------------------------------

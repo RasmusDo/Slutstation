@@ -161,7 +161,35 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   const secret = req.headers.get("x-cron-secret") ?? "";
-  if (!CRON_SECRET || secret !== CRON_SECRET) {
+  const cronOk = !!CRON_SECRET && secret === CRON_SECRET;
+
+  // Second door, test sends only: an admin session from the panel may trigger
+  // a single test announcement to the address in the body, marking nobody.
+  // The cron secret stays required for the real run; the JWT and the role are
+  // both verified server-side with the service client, so a member token or a
+  // forged header gets the same 401 it always did.
+  let adminTest = false;
+  if (!cronOk) {
+    let peek: Record<string, unknown> = {};
+    try { peek = await req.clone().json(); } catch { /* not a test call */ }
+    const wantsTest = !!String(peek.to ?? "").trim();
+    const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    if (wantsTest && jwt) {
+      const gate = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        { auth: { persistSession: false } },
+      );
+      const { data: u } = await gate.auth.getUser(jwt);
+      if (u?.user) {
+        const { data: p } = await gate
+          .from("profiles").select("role").eq("id", u.user.id).single();
+        adminTest = p?.role === "admin";
+      }
+    }
+  }
+
+  if (!cronOk && !adminTest) {
     return new Response(JSON.stringify({ error: "Not authorised" }), {
       status: 401, headers: { "Content-Type": "application/json" },
     });

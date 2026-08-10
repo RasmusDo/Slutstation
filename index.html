@@ -83,6 +83,10 @@
     <button class="x" id="announceX" aria-label="Dismiss" data-i18n-attr="aria-label:announce.dismiss">×</button>
   </div>
 
+  <!-- Scroll progress hairline; --sp is driven by main.js from the same
+       rAF-batched scroll handler that already drives the hero cross-fade. -->
+  <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
   <div class="grain"></div>
   <div class="aura"></div>
   <div class="aura aura-2"></div>
@@ -122,13 +126,12 @@
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="#events" data-i18n="nav.events">Events</a>
-      <a href="#about" data-i18n="nav.about">About</a>
       <a href="#apply" data-i18n="nav.membership">Membership</a>
       <a href="#info" data-i18n="nav.info">Info</a>
-      <a href="#contact" data-i18n="nav.contact">Contact</a>
       <a href="/work.html" data-i18n="nav.work">Work with us</a>
       <a href="/account.html" data-i18n="nav.account">Account</a>
-    </nav>
+      <a href="/staff.html" id="navStaff" hidden data-i18n="nav.staff">Staff</a>
+      <a href="/admin.html" id="navAdmin" hidden data-i18n="nav.admin">Admin</a>    </nav>
     <div class="nav-cta">
       <a href="/tickets.html" class="btn btn-primary btn-sm" data-i18n="nav.tickets">Tickets</a>
       <button class="nav-toggle" id="navToggle" aria-label="Menu" data-i18n-attr="aria-label:nav.menu"><span></span><span></span><span></span></button>
@@ -261,7 +264,7 @@
     <div class="form-shell reveal" style="max-width:660px;text-align:center;">
       <p style="color:var(--muted);font-size:1.02rem;line-height:1.55;" data-i18n-html="apply.note">Membership is free and runs to the end of the calendar year, everyone renews in January, whenever they joined. Creating your account registers you with
         <strong style="color:var(--ink)">Kulturföreningen Musikbopp</strong>, gives you a tier that
-        grows every time you come, and an entry code for the door.</p>
+        grows every time you come, and a tier code the bar and the wardrobe can scan.</p>
       <div class="form-actions" style="justify-content:center;margin-top:26px;">
         <a href="/account.html" class="btn btn-primary" data-i18n="apply.cta">Become a member</a>
         <a href="/account.html" class="btn btn-ghost" data-i18n="apply.have">I already have an account</a>
@@ -317,7 +320,7 @@
         <div class="accordion">
           <div class="acc-item">
             <button class="acc-head"><span data-i18n="acc.member.q">What does it mean to become a member?</span> <span class="plus">+</span></button>
-            <div class="acc-body"><div class="inner"><p data-i18n-html="acc.member.a">Becoming a member means you're aligned with our culture and values. Membership gives you access to buy tickets to our events. It's free, always will be, and runs to the end of the calendar year. Join in August and you're a member until 1 January; everyone renews in January, whenever they joined. When you sign up you'll get a confirmation email, click the link in it to activate your account, and your membership is registered in eBas automatically. You can see your membership status and your tier any time at <a href="/account.html" style="color:var(--accent)">your account</a>. If any uncertainty arises, please contact us at <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.</p></div></div>
+            <div class="acc-body"><div class="inner"><p data-i18n-html="acc.member.a">Becoming a member means you're aligned with our culture and values. Membership gives you access to our outdoor events. It's free, always will be, and runs to the end of the calendar year. Join in August and you're a member until 1 January; everyone renews in January, whenever they joined. When you sign up you'll get a confirmation email, click the link in it to activate your account, and your membership is registered in eBas automatically. You can see your membership status, your tier and your tier code any time at <a href="/account.html" style="color:var(--accent)">your account</a>. The tiers, how many events each one takes, and what each one gives you can change as the association grows; anything already given to you stays yours. If any uncertainty arises, please contact us at <a href="mailto:info@slutstation.se" style="color:var(--accent)">info@slutstation.se</a>.</p></div></div>
           </div>
           <div class="acc-item">
             <button class="acc-head"><span data-i18n="acc.events.q">About our events</span> <span class="plus">+</span></button>
@@ -385,7 +388,7 @@
 
               <p><strong>Uppträdande.</strong> Vi har nolltolerans mot droger, våld, trakasserier och diskriminering. Följ personalens och vakternas anvisningar. Den som inte gör det avvisas.</p>
 
-              <p><strong>Alkohol.</strong> Alkohol serveras endast där vi har serveringstillstånd, och endast av vår personal.</p>
+              <p><strong>Alkohol.</strong> Alkohol serveras endast där vi har serveringstillstånd, och endast av vår personal. Det är inte tillåtet att ta med egen alkohol in på området.</p>
 
               <p><strong>Ditt ansvar.</strong> Du ansvarar för dina egna tillhörigheter. Vi ansvarar inte för borttappade saker, men hör av dig, vi förvarar hittegods en tid efter varje evenemang.</p>
 
@@ -400,7 +403,7 @@
 
               <p><strong>Conduct.</strong> Zero tolerance for drugs, violence, harassment and discrimination. Follow the instructions of our staff and security. Anyone who doesn't will be removed.</p>
 
-              <p><strong>Alcohol.</strong> Alcohol is served only where we hold a serving licence, and only by our staff.</p>
+              <p><strong>Alcohol.</strong> Alcohol is served only where we hold a serving licence, and only by our staff. Bringing your own is not permitted.</p>
 
               <p><strong>Your things.</strong> You look after your own belongings. We're not liable for lost property, but do get in touch, we keep found items for a while after each event.</p>
 
@@ -423,6 +426,7 @@
               · <strong>Val om utskick</strong>: om du tackat ja till att höra om kommande event. Det är skilt från att bli medlem, det är avstängt om du inte kryssar i det, och du kan stänga av det när som helst på ditt konto.<br />
               · <strong>En referenskod</strong>: genereras för varje konto. Den används inte i dag.<br />
               · <strong>Arbetspass</strong>: om du jobbar ett event: vilket event och i vilken roll.<br />
+              · <strong>Dörranteckning och incidentrapporter</strong>: en administratör kan skriva en kort anteckning om en medlem (till exempel "nekad entré förra gången") som dörrpersonalen ser vid uppslag under ett pass. Anteckningen raderas automatiskt efter tolv månader, och du kan alltid be att få se din egen. Personalen kan också rapportera händelser under ett evenemang (nekad entré, incident, fullt hus); rapporterna är tidsstämplade och läses endast av administratörer.<br />
               · <strong>Biljetter via Billetto</strong>: deltagarlistan för ett evenemang du köpt biljett till (namn och e-post), så att vi kan släppa in dig. Inga betalningsuppgifter.</p>
 
               <p><strong>Vad vi medvetet inte sparar.</strong> Vi sparar inte ditt personnummer. eBas behöver bara ditt födelsedatum (som ÅÅÅÅMMDD) för att registrera dig, och det är allt vi håller. Vi sparar inte kortuppgifter, se betalningar nedan.</p>
@@ -452,6 +456,7 @@
               · <strong>Email preference</strong>: whether you opted in to hear about events. Opting in is separate from joining, it is off unless you tick it, and you can turn it off at any time on your account page.<br />
               · <strong>A referral code</strong>: generated for every account. It is currently unused.<br />
               · <strong>Staff assignments</strong>: if you work an event, which event and in what role.<br />
+              · <strong>Door note and incident reports</strong>: an administrator may write a short note about a member (for example "refused entry last time") that door staff see when looking you up during a shift. The note is deleted automatically after twelve months, and you can always ask to see your own. Staff can also file incident reports during an event (refused entry, incident, capacity reached); they are timestamped and read only by administrators.<br />
               · <strong>Tickets via Billetto</strong>: the attendee list for an event you bought a ticket to (name and email), so we can admit you. No payment details.</p>
 
               <p><strong>What we deliberately do not store.</strong> We do not store your personnummer. eBas needs only your date of birth (as YYYYMMDD) to register you, and that is all we hold. We do not store card details, see payments below.</p>

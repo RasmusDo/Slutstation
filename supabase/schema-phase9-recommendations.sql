@@ -218,7 +218,12 @@ end $$;
 grant execute on function public.admin_audit(int) to authenticated;
 
 -- ----------------------------------------------------------------------------
--- 4. The offline door roster        *** NOT YET APPLIED — read this first ***
+-- 4. The offline door roster        *** SUPERSEDED — do not apply this one ***
+--
+-- A narrowed version now lives in schema-phase16-offline-door.sql: tonight's
+-- ticket-holders and checked-in members, falling back to active members only
+-- on a Billetto-sold night, instead of the whole register. Apply that file,
+-- not the block below, which is kept only to show what was decided against.
 --
 -- Check-ins already queue offline and send themselves when the signal comes
 -- back. The LOOKUP does not: it needs the network, so the moment the signal

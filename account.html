@@ -9,12 +9,7 @@
   <meta name="robots" content="noindex" />
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
 
-  <!-- The Supabase SDK comes from esm.sh at runtime; preconnecting and
-       preloading it here shaves the whole DNS+TLS+fetch chain off the time
-       before the page can check who you are. -->
-  <link rel="preconnect" href="https://esm.sh" crossorigin />
   <link rel="preconnect" href="https://uwawugvatencvzvvfaeq.supabase.co" crossorigin />
-  <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.45.4" />
   <!-- Device tier, decided before the stylesheet so the first paint is already
        the affordable one. Full rationale in index.html. -->
   <script>
@@ -63,11 +58,10 @@
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="/#events" data-i18n="nav.events">Events</a>
-      <a href="/#about" data-i18n="nav.about">About</a>
-      <a href="/tickets.html" data-i18n="nav.tickets">Tickets</a>
+      <a href="/#apply" data-i18n="nav.membership">Membership</a>
       <a href="/#info" data-i18n="nav.info">Info</a>
-      <a href="/#contact" data-i18n="nav.contact">Contact</a>
       <a href="/work.html" data-i18n="nav.work">Work with us</a>
+      <a href="/account.html" data-i18n="nav.account">Account</a>
       <a href="/staff.html" id="navStaff" hidden data-i18n="nav.staff">Staff</a>
       <a href="/admin.html" id="navAdmin" hidden data-i18n="nav.admin">Admin</a>
     </nav>
@@ -110,6 +104,7 @@
               <div class="field full" data-captcha="signin"></div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary" data-i18n="acct.signin">Sign in</button>
+                <button type="button" class="acc-link" id="magicBtn" data-i18n="acct.magic">Email me a sign-in link</button>
                 <button type="button" class="acc-link" id="forgotBtn" data-i18n="acct.forgot">Forgot password?</button>
                 <button type="button" class="acc-link" id="resendBtn" data-i18n="acct.resend">Didn't get the confirmation email?</button>
                 <span class="form-msg" id="signinMsg" role="status"></span>
@@ -117,15 +112,43 @@
             </div>
           </form>
 
-          <!-- ---------- SIGN UP ---------- -->
+          <!-- ---------- SIGN UP ----------
+               Two steps, ONE form, one submit. The wizard is presentation
+               only: every field still posts together, so the eBas data is
+               complete at signup and there is no half-registered state a
+               split submission could create. Step switching lives in
+               account.js next to the submit handler it fronts. -->
           <form class="acc-pane" id="signupForm" novalidate>
             <p class="acc-note" data-i18n-html="acct.signupNote">Creating an account also registers you as a member of <strong>Kulturföreningen Musikbopp</strong>. Membership is free and runs to the end of the calendar year, everyone renews in January, whenever they joined.</p>
+
+            <div class="acc-progress" aria-hidden="true">
+              <span class="acc-progress-step on" data-step-dot="1"><i>1</i> <span data-i18n="acct.step1">Account</span></span>
+              <span class="acc-progress-line"></span>
+              <span class="acc-progress-step" data-step-dot="2"><i>2</i> <span data-i18n="acct.step2">Your details</span></span>
+            </div>
+
+            <div class="acc-step" id="signupStep1">
             <div class="form-grid">
               <div class="field"><label for="f-account-first-2"><span data-i18n="acct.first">First Name</span> <span class="req">*</span></label><input id="f-account-first-2" name="first" autocomplete="given-name" required /></div>
               <div class="field"><label for="f-account-last-3"><span data-i18n="acct.last">Last Name</span> <span class="req">*</span></label><input id="f-account-last-3" name="last" autocomplete="family-name" required /></div>
-              <div class="field"><label for="f-account-email-4"><span data-i18n="acct.emailLbl">Email</span> <span class="req">*</span></label><input id="f-account-email-4" name="email" type="email" autocomplete="email" required /></div>
+              <div class="field full"><label for="f-account-email-4"><span data-i18n="acct.emailLbl">Email</span> <span class="req">*</span></label><input id="f-account-email-4" name="email" type="email" autocomplete="email" required /></div>
+              <div class="field full">
+                <label for="f-account-password-11"><span data-i18n="acct.passwordLbl">Password</span> <span class="req">*</span></label>
+                <input id="f-account-password-11" name="password" type="password" autocomplete="new-password" minlength="8" required />
+                <small class="acc-hint" data-i18n="acct.pwHint">At least 8 characters. You'll use this to sign in.</small>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="signupNext" data-i18n="acct.continue">Continue</button>
+                <span class="form-msg" id="signupMsg1" role="status"></span>
+              </div>
+            </div>
+            </div>
+
+            <div class="acc-step" id="signupStep2" hidden>
+            <p class="acc-hint" style="margin-bottom:14px;" data-i18n="acct.detailsWhy">eBas, the membership register, needs these to register you. They stay between us and it.</p>
+            <div class="form-grid">
               <div class="field"><label for="f-account-phone-5"><span data-i18n="acct.phone">Phone Number</span> <span class="req">*</span></label><input id="f-account-phone-5" name="phone" type="tel" autocomplete="tel" required /></div>
-              <div class="field"><label for="f-account-dob-6"><span data-i18n="acct.dob">Date of Birth</span> <span class="req">*</span></label><input id="f-account-dob-6" name="dob" type="date" required /></div>
+              <div class="field"><label for="f-account-dob-6"><span data-i18n="acct.dob">Date of Birth</span> <span class="req">*</span></label><input id="f-account-dob-6" name="dob" type="date" autocomplete="bday" required /></div>
               <div class="field">
                 <label for="f-account-gender-7"><span data-i18n="acct.gender">Gender</span> <span class="req">*</span></label>
                 <select id="f-account-gender-7" name="gender" required>
@@ -136,11 +159,6 @@
               <div class="field"><label for="f-account-city-8"><span data-i18n="acct.city">City</span> <span class="req">*</span></label><input id="f-account-city-8" name="city" required value="Stockholm" autocomplete="address-level2" /></div>
               <div class="field"><label for="f-account-street-9"><span data-i18n="acct.street">Street Address</span> <span class="req">*</span></label><input id="f-account-street-9" name="street" required autocomplete="street-address" /></div>
               <div class="field"><label for="f-account-zip-10"><span data-i18n="acct.zip">Zip Code</span> <span class="req">*</span></label><input id="f-account-zip-10" name="zip" required autocomplete="postal-code" /></div>
-              <div class="field full">
-                <label for="f-account-password-11"><span data-i18n="acct.passwordLbl">Password</span> <span class="req">*</span></label>
-                <input id="f-account-password-11" name="password" type="password" autocomplete="new-password" minlength="8" required />
-                <small class="acc-hint" data-i18n="acct.pwHint">At least 8 characters. You'll use this to sign in.</small>
-              </div>
 
               <!-- DJ application, moved here from the one-pager so there is a
                    single signup form. Applying and joining are one step. -->
@@ -169,8 +187,10 @@
               <div class="field full" data-captcha="signup"></div>
               <div class="form-actions">
                 <button type="submit" class="btn btn-primary" data-i18n="acct.signup">Create account</button>
+                <button type="button" class="acc-link" id="signupBack" data-i18n="acct.back">Back</button>
                 <span class="form-msg" id="signupMsg" role="status"></span>
               </div>
+            </div>
             </div>
           </form>
 
@@ -228,6 +248,10 @@
              and the button opens and focuses the field rather than just
              scrolling near it. Hidden by default so a complete account never
              sees a slot where a warning might one day go. -->
+        <!-- Admin-only, and it renders nothing for anyone else. Hidden here so a
+             member never sees an empty slot where a debug control would go. -->
+        <div class="demo-bar" id="demoBar" hidden></div>
+
         <div class="acc-attention" id="detailsAlert" role="status" hidden>
           <span class="acc-attention-mark" aria-hidden="true">!</span>
           <div class="acc-attention-text">
@@ -254,30 +278,44 @@
         </div>
 
         <!-- ---------- YOUR STATS ---------- -->
-        <div class="form-shell acc-panel">
+        <div class="form-shell acc-panel" id="tierCard">
           <div class="acc-card-head">
             <h3 data-i18n="acct.tierTitle">Your tier</h3>
             <p data-i18n="acct.tierLead">Earned by turning up. Counted over the last 24 months.</p>
           </div>
 
+          <!-- One-time promotion banner: shown only on the first visit after a
+               tier-up (account.js compares against a last-seen marker). -->
+          <div class="tier-promo" id="tierPromo" hidden></div>
+
           <div class="tier-head">
             <span class="tier-badge" id="tierBadge">Tier 1</span>
+            <span class="tier-rank" id="tierRank" hidden></span>
             <span class="tier-next" id="tierNext"></span>
           </div>
-          <div class="tier-bar"><span id="tierFill"></span></div>
+          <!-- One notch per night of the current band, filled by account.js;
+               the plain fill span stays as the no-JS/first-paint fallback. -->
+          <div class="tier-bar" id="tierBar"><span id="tierFill"></span></div>
           <div class="tier-scale" id="tierScale"></div>
+          <div class="tier-lock" id="tierLock" hidden></div>
+          <p class="tier-safe" id="tierSafe" hidden></p>
 
-          <!-- The ladder exists and the counting is real; what each rung
-               unlocks is not decided yet, and promising something at the door
-               that nobody has agreed to honour is worse than promising
-               nothing. So the rungs are shown and the rewards are not. -->
-          <p class="tier-ladder-lead" data-i18n="tier.lead">What each tier unlocks is still being decided. Your count is already running, so nothing you turn up to now is wasted.</p>
+          <!-- Tiers 1 to 3 are decided and honoured at the door, by the same
+               phone that scans your code. Tier 4 is not decided, and saying so
+               is better than inventing something nobody has agreed to give. -->
+          <p class="tier-ladder-lead" data-i18n="tier.lead">Every tier keeps everything below it. Counted over the last 24 months, so it moves both ways.</p>
           <ol class="tier-ladder" id="tierLadder">
-            <li><b>Tier 1</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
-            <li><b>Tier 2</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
-            <li><b>Tier 3</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
-            <li><b>Tier 4</b><span class="tier-soon" data-i18n="tier.soon">Coming soon</span></li>
+            <li><b>Tier 1</b><span data-i18n="tier.r1">Buy tickets to members-only events.</span></li>
+            <li><b>Tier 2</b><span data-i18n="tier.r2">The wardrobe is on us, every night you come.</span></li>
+            <li><b>Tier 3</b><span data-i18n="tier.r3">A soft drink or a Red Bull on us, 20% off your ticket, and the announcement before anyone else.</span></li>
+            <li><b>Tier 4</b><span data-i18n="tier.r4">Tickets at our lowest price, always — even on a night that has sold out.</span></li>
           </ol>
+
+          <!-- Said once, quietly, and in the same place as the promises. A
+               ladder that has already moved twice needs to say out loud that it
+               can move again, and it is fairer to say it here than to change
+               something later and hope nobody minds. -->
+          <p class="tier-note" data-i18n="tier.change">The tiers, and what each one gives you, can change as we grow. A code you have already been given stays yours.</p>
 
           <div class="stat-grid">
             <div class="stat"><b id="statWindow">0</b><small data-i18n="acct.statWindow">events, last 24 months</small></div>
@@ -346,13 +384,41 @@
         <!-- ---------- ENTRY QR ---------- -->
         <div class="form-shell acc-panel qr-panel" id="qrPanel" hidden>
           <div class="acc-card-head">
-            <h3 data-i18n="acct.qrTitle">Your entry code</h3>
-            <p data-i18n="acct.qrLead">Show this at the door. Scanning it records your attendance and moves your tier.</p>
+            <h3 data-i18n="acct.qrTitle">Your tier code</h3>
+            <p data-i18n="acct.qrLead">Show this at the wardrobe or the bar. It proves what tier you are and what that is worth tonight.</p>
           </div>
           <div class="qr-wrap"><canvas id="memberQr" width="220" height="220"></canvas></div>
           <p style="text-align:center;margin-top:6px;">
             <button type="button" class="btn btn-ghost btn-sm" id="qrSave" data-i18n="acct.qrSave">Save it to my photos</button>
           </p>
+          <!-- The same code, living in Apple Wallet and updating itself when
+               your tier or tonight's perks change (wallet Edge Function +
+               schema-phase20). DORMANT behind WALLET_CARD in
+               supabase-config.js until pass signing exists (ROLLOUT.md §9);
+               account.js unhides it when the switch is on. -->
+          <p style="text-align:center;margin-top:10px;" id="walletWrap" hidden>
+            <button type="button" class="wallet-btn" id="walletBtn" aria-label="Add to Apple Wallet">
+              <svg viewBox="0 0 42 32" width="30" height="23" aria-hidden="true">
+                <rect x="1" y="1" width="40" height="30" rx="5" fill="#0a0b0f" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+                <path d="M5 8c0-1.7 1.3-3 3-3h26c1.7 0 3 1.3 3 3v2H5V8z" fill="#d94f43"/>
+                <path d="M5 11h32v3H5z" fill="#e8b33c"/>
+                <path d="M5 15h32v3H5z" fill="#4aa860"/>
+                <path d="M5 19h32v6c0 1.7-1.3 3-3 3H8c-1.7 0-3-1.3-3-3v-6z" fill="#4a7ae0"/>
+              </svg>
+              <span><small data-i18n="acct.walletAdd1">Add to</small><b data-i18n="acct.walletAdd2">Apple Wallet</b></span>
+            </button>
+            <span class="form-msg" id="walletMsg" role="status" style="display:block;margin-top:8px;"></span>
+          </p>
+          <!-- Filled by refreshTierCard(). Hidden until there is something to
+               say, so a Tier 1 member is not shown an empty list of things
+               they cannot have. -->
+          <ul class="perk-list" id="perkList" hidden></ul>
+
+          <!-- Reward codes. Hidden behind a tap rather than printed on the
+               page: this is worth money, and an account page gets opened in a
+               queue with people behind you. Revealable as often as they like —
+               there is nothing to protect by limiting that. -->
+          <div class="code-list" id="codeList" hidden></div>
           <p class="acc-hint" style="text-align:center;" data-i18n="acct.qrOffline">Works offline once the page has loaded.</p>
         </div>
 
@@ -433,7 +499,6 @@
             <p data-i18n="acct.soonL">What lands on this page next. Roughly in the order we're building it.</p>
           </div>
           <ul class="acc-soon-list">
-            <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon1T">Tier rewards</strong><small data-i18n="acct.soon1B">Right now your tier is a number. Next it unlocks things, early access to releases, cheaper wardrobe, and tickets that never reach the public.</small></div></li>
             <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon2T">Account balance</strong><small data-i18n="acct.soon2B">Top up once and spend it on tickets, at the bar and on merch. Usable with us only, and never withdrawable as cash.</small></div></li>
             <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon3T">Premium membership</strong><small data-i18n="acct.soon3B">A paid tier on top of the free one, free wardrobe every event, priority entry, and a discount that pays for itself in two nights.</small></div></li>
             <li><span class="acc-dot"></span><div><strong data-i18n="acct.soon4T">Referral codes</strong><small data-i18n="acct.soon4B">Your own code to send friends. They get something off their first ticket, you get credit when they turn up.</small></div></li>

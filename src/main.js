@@ -53,6 +53,15 @@ tabs.forEach((tab) =>
     const isUpcoming = tab.dataset.tab === "upcoming";
     upcoming.style.display = isUpcoming ? "" : "none";
     past.style.display = isUpcoming ? "none" : "";
+    // Stagger the incoming cards rather than hard-swapping the grids. The
+    // reflow read between remove and add is what restarts the animation.
+    // rv-in is forced on because a grid that was display:none at load never
+    // fired the reveal observer, and this is the moment it becomes visible.
+    const shown = isUpcoming ? upcoming : past;
+    shown.classList.add("rv-in");
+    shown.classList.remove("tab-swap");
+    void shown.offsetWidth;
+    shown.classList.add("tab-swap");
   })
 );
 
@@ -65,13 +74,14 @@ djSwitch?.addEventListener("click", () => {
   djFields.classList.toggle("show", on);
 });
 
-/* ---- accordion ---- */
+/* ---- accordion ----
+   Class toggle only. The open/close animation is the stylesheet's grid-rows
+   transition, so nothing here measures scrollHeight — which also means a
+   language swap that changes the text can never strand an open panel at a
+   stale measured height. */
 document.querySelectorAll(".acc-head").forEach((head) =>
   head.addEventListener("click", () => {
-    const item = head.parentElement;
-    const body = head.nextElementSibling;
-    const open = item.classList.toggle("open");
-    body.style.maxHeight = open ? body.scrollHeight + "px" : null;
+    head.parentElement.classList.toggle("open");
   })
 );
 
@@ -101,18 +111,17 @@ if (window.emailjs) emailjs.init({ publicKey: SS_API.emailjs.publicKey });
    eBas call happens server-side in the `ebas` Edge Function, which is why the
    eBas key is no longer built into this bundle. */
 
-/* ---- scroll reveal, removed ----
+/* ---- scroll reveal ----
 
-   Every .reveal block started at opacity 0 and waited for an observer with a
-   threshold of 0.12, meaning 12% of the ELEMENT had to be on screen. Anything
-   taller than about eight viewports can never satisfy that, so it never fired
-   and the block stayed invisible for good. Measured on the front page:
-   17 of 17 hidden at load, and still 1 hidden after scrolling to the bottom
-   and back. With JavaScript off, all 17.
+   Removed once, rebuilt at the end of this file. The original hid every
+   .reveal block in CSS at opacity 0 and waited on an observer with a
+   threshold of 0.12 — 12% of the ELEMENT on screen — which a tall section
+   can never satisfy, so whole sections stayed invisible for good (17 of 17
+   hidden at load when it was measured), and with JavaScript off, everything.
 
-   The premise does not hold either. Nothing here is expensive enough to be
-   worth hiding until somebody scrolls to it, and the price was a page that
-   could hide its own content. The stylesheet paints .reveal normally now. */
+   The rebuild inverts the failure mode: the page ships visible, the hiding
+   class is only ever added by the same module that owns the observer that
+   unhides it, and the threshold is 0. See initReveal() below. */
 
 /* =========================================================
    HERO BACKGROUND
@@ -246,6 +255,14 @@ if (heroBg) {
     const span = Math.max(window.innerHeight * 0.85, 1);
     const hb = Math.min(Math.max(window.scrollY / span, 0), 1);
     heroBg.style.setProperty("--hb", hb.toFixed(3));
+    // Mirrored onto <html> for things outside .hero-bg's subtree: the hero
+    // parallax reads it there (a custom property set on .hero-bg does not
+    // reach a sibling). --sp drives the progress hairline. Same rAF, so the
+    // two extra writes cost nothing a profiler can find.
+    const doc = document.documentElement;
+    doc.style.setProperty("--hb", hb.toFixed(3));
+    const spMax = doc.scrollHeight - window.innerHeight;
+    doc.style.setProperty("--sp", spMax > 0 ? (window.scrollY / spMax).toFixed(4) : "0");
 
     // Once the blurred still has fully covered it, the video is painting
     // frames nobody can see. Stop it, and start it again on the way back up.
@@ -697,4 +714,72 @@ function deleteCookie(name) {
     if (Math.abs(dx) > 45) step(dx < 0 ? 1 : -1);
     x0 = null;
   });
+})();
+
+/* =========================================================
+   SCROLL REVEAL, SECOND ATTEMPT
+
+   The first version is described at its grave further up: it hid content in
+   CSS and waited for an observer that could never fire on a tall block. This
+   one inverts the failure mode. The page ships fully visible; classes that
+   hide anything are only added HERE, one line before the observer that will
+   unhide them is watching, so JS-off, reduced-motion, an exception above
+   this line — every failure — lands on a visible page.
+
+   threshold: 0 with a small bottom rootMargin: one pixel of the element
+   crossing 8% up from the bottom edge fires it, however tall the element is.
+   ========================================================= */
+(function initReveal() {
+  if (!("IntersectionObserver" in window)) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const els = [...document.querySelectorAll(".reveal")];
+  if (!els.length) return;
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      e.target.classList.add("rv-in");
+      io.unobserve(e.target);
+    }
+  }, { threshold: 0, rootMargin: "0px 0px -8% 0px" });
+
+  els.forEach((el) => {
+    // Grids cascade their children; everything else fades as one block.
+    el.classList.add("rv");
+    if (el.matches(".event-grid, .gallery-grid, .rules, .about-grid")) {
+      el.classList.add("rv-grid");
+    }
+    io.observe(el);
+  });
+})();
+
+/* =========================================================
+   NAV SCROLL-SPY
+
+   The link for the section you are in carries .active. Sections are watched
+   through a horizontal band across the middle of the viewport (rootMargin
+   trims 45% off the top and 50% off the bottom), so exactly one section is
+   "current" at a time and the handover happens mid-screen, where a person
+   would say they've moved on. Only sections that actually have a nav link
+   are observed — the gallery keeps whatever was active before it.
+   ========================================================= */
+(function initScrollSpy() {
+  if (!("IntersectionObserver" in window)) return;
+  const links = new Map();
+  document.querySelectorAll('.nav-links a[href^="#"]').forEach((a) => {
+    const sec = document.querySelector(a.getAttribute("href"));
+    if (sec) links.set(sec, a);
+  });
+  if (!links.size) return;
+
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (!e.isIntersecting) continue;
+      links.forEach((a) => a.classList.remove("active"));
+      links.get(e.target)?.classList.add("active");
+    }
+  }, { threshold: 0, rootMargin: "-45% 0px -50% 0px" });
+
+  links.forEach((_, sec) => io.observe(sec));
 })();

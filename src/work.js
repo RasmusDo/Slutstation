@@ -19,13 +19,12 @@ import { initGlassLight } from "./liquid-glass.js";
 initGlassLight();
 initI18n();
 
-// The Supabase SDK is imported DYNAMICALLY, inside a try/catch, on purpose.
-// An ES module is all-or-nothing: a static `import` from a CDN that fails
-// (outage, ad blocker, hotel wifi portal, a phone on a filtered network) stops
-// the whole module from ever executing — so the language switch, the menu and
-// every static part of the page die with it, silently, with nothing on screen
-// to say why. account.js and tickets.js were already written this way; these
-// two pages were newer and were not, which is how they got missed.
+// The Supabase SDK is BUNDLED — installed from npm and code-split by Vite into
+// a chunk served from our own origin, so no third-party CDN sits in this
+// page's path any more (it used to load from esm.sh at runtime). It stays a
+// DYNAMIC import inside a try/catch on purpose: the split chunk keeps first
+// paint light, and a network that dies between the page and the chunk still
+// degrades gracefully.
 //
 // Timed out rather than simply awaited: a request that is accepted and never
 // answered never rejects, so the catch would never fire and the page would
@@ -45,7 +44,7 @@ const importWithTimeout = (p, ms = 12000) =>
 // does need a client waits on `sdkReady` instead.
 let supabase = null;
 const sdkReady = importWithTimeout(
-  import("https://esm.sh/@supabase/supabase-js@2.45.4"))
+  import("@supabase/supabase-js"))
   .then(({ createClient }) => {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return true;

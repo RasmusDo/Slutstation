@@ -462,8 +462,24 @@ body.no-announce .nav { top: 0; }
 .acc-head { width: 100%; text-align: left; padding: 20px 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; font-weight: 600; font-size: 1.02rem; letter-spacing: -0.01em; }
 .acc-head .plus { color: var(--accent); transition: transform 0.3s; font-size: 1.25rem; font-weight: 400; }
 .acc-item.open .plus { transform: rotate(45deg); }
-.acc-body { max-height: 0; overflow: hidden; transition: max-height 0.4s var(--ease); }
-.acc-body .inner { padding: 0 22px 22px; color: var(--muted); font-size: 0.96rem; }
+/* Open/close is the modern grid-rows animation: 0fr -> 1fr animates to the
+   content's real height, so nothing measures scrollHeight in JS and a language
+   swap that changes the text length can never leave an open panel clipped at
+   an old measurement (which the max-height version needed a re-measure for). */
+.acc-body {
+  display: grid; grid-template-rows: 0fr; overflow: hidden;
+  transition: grid-template-rows 0.45s var(--ease);
+}
+.acc-item.open .acc-body { grid-template-rows: 1fr; }
+/* The inner's bottom padding would otherwise hold the "0fr" row open by its
+   own 22px — padding counts toward the row's min-content size even when the
+   content itself collapses — so the padding travels with the transition. */
+.acc-body .inner {
+  min-height: 0; overflow: hidden; padding: 0 22px;
+  transition: padding-bottom 0.45s var(--ease);
+  color: var(--muted); font-size: 0.96rem;
+}
+.acc-item.open .acc-body .inner { padding-bottom: 22px; }
 .acc-body .inner p { margin-bottom: 11px; }
 
 /* ---------- contact / footer ---------- */
@@ -1792,3 +1808,133 @@ body.inner .nav {
 }
 /* Once you have scrolled, the existing .nav.scrolled fill takes over and is
    already stronger; this only has to hold the un-scrolled state. */
+
+/* ===========================================================
+   2026 INTERACTION REFRESH
+
+   Everything in this block obeys the two house rules: animate
+   only what the compositor can do alone (opacity, transform),
+   and stand down for anyone who asked for less motion. The
+   pointer sheen and the glass lens already live in
+   liquid-glass.js; nothing here duplicates them.
+   =========================================================== */
+
+/* ---------- scroll reveal, rebuilt ----------
+   The old version hid content in CSS and waited for JS to show it, with a
+   threshold a tall section could never meet — the two failure modes this one
+   is built around. Nothing is hidden until main.js has confirmed it will be
+   able to unhide it: the .rv classes are only ever added from the observer
+   module, so JS-off, reduced-motion and any observer bug all land on a fully
+   visible page. threshold is 0, so a single pixel entering the band fires it. */
+.rv { opacity: 0; transform: translateY(18px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+.rv.rv-in { opacity: 1; transform: none; }
+/* Grids reveal their children in a cascade instead of arriving as one slab.
+   The container stays visible; the stagger lives on the children. */
+.rv-grid, .rv-grid.rv-in { opacity: 1; transform: none; transition: none; }
+.rv-grid > * { opacity: 0; transform: translateY(18px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+.rv-grid.rv-in > * { opacity: 1; transform: none; }
+.rv-grid.rv-in > :nth-child(2) { transition-delay: 0.07s; }
+.rv-grid.rv-in > :nth-child(3) { transition-delay: 0.14s; }
+.rv-grid.rv-in > :nth-child(4) { transition-delay: 0.21s; }
+.rv-grid.rv-in > :nth-child(5) { transition-delay: 0.28s; }
+.rv-grid.rv-in > :nth-child(6) { transition-delay: 0.35s; }
+.rv-grid.rv-in > :nth-child(7) { transition-delay: 0.42s; }
+.rv-grid.rv-in > :nth-child(8) { transition-delay: 0.49s; }
+.rv-grid.rv-in > :nth-child(n+9) { transition-delay: 0.56s; }
+/* Belt and braces: if the classes are ever present under reduced motion
+   (an old cached script, an extension), the content still shows. */
+@media (prefers-reduced-motion: reduce) {
+  .rv, .rv-grid > * { opacity: 1 !important; transform: none !important; }
+}
+
+/* ---------- hero entrance ----------
+   One staged arrival on load: badge, logo, tagline, buttons, cue. Fill mode
+   is BACKWARDS on purpose — `both` would pin the final keyframe forever and
+   sit on top of the parallax opacity below; backwards only covers the delay. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-badge   { animation: heroIn 0.8s var(--ease) 0.05s backwards; }
+  .hero-logo    { animation: heroIn 0.9s var(--ease) 0.16s backwards; }
+  .hero-tagline { animation: heroIn 0.9s var(--ease) 0.30s backwards; }
+  .hero-actions { animation: heroIn 0.9s var(--ease) 0.44s backwards; }
+  /* The cue is positioned by its own transform, so it only fades. */
+  .scroll-cue   { animation: heroFade 1.2s var(--ease) 0.9s backwards; }
+}
+@keyframes heroIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes heroFade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- hero parallax ----------
+   Driven by the same --hb the blur cross-fade already uses (main.js mirrors
+   it onto <html>), so this costs no listener and no extra style write: the
+   text drifts up a touch slower than the page and hands over to the blur. */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-inner {
+    transform: translate3d(0, calc(var(--hb, 0) * -9vh), 0);
+    opacity: calc(1 - var(--hb, 0) * 1.4);
+  }
+  .hero .scroll-cue { opacity: calc(1 - var(--hb, 0) * 3.5); }
+}
+
+/* ---------- scroll progress hairline ---------- */
+.scroll-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  z-index: 1300; pointer-events: none;
+}
+.scroll-progress span {
+  display: block; height: 100%; background: var(--accent);
+  transform: scaleX(var(--sp, 0)); transform-origin: 0 50%;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
+/* ---------- nav scroll-spy ---------- */
+.nav-links a.active { color: #fff; background: rgba(255, 255, 255, 0.12); }
+.nav.scrolled .nav-links a.active { color: #fff; background: rgba(255, 255, 255, 0.10); }
+
+/* ---------- animated tab switch ----------
+   Added to whichever grid the Events tabs just revealed; each card plays one
+   short entrance. `backwards` only bridges the delay, so once the animation
+   ends the reveal classes own the element again. */
+.tab-swap > * { animation: tabIn 0.45s var(--ease) backwards; }
+.tab-swap > :nth-child(2) { animation-delay: 0.05s; }
+.tab-swap > :nth-child(3) { animation-delay: 0.10s; }
+.tab-swap > :nth-child(4) { animation-delay: 0.15s; }
+.tab-swap > :nth-child(5) { animation-delay: 0.20s; }
+.tab-swap > :nth-child(n+6) { animation-delay: 0.25s; }
+@keyframes tabIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- button sheen ----------
+   A single light-streak sweep on hover, transform-only. Not on the primary
+   button: a white streak over a white fill is invisible at best and a smear
+   at worst. Sits under the button's text but over its fill. */
+@media (hover: hover) and (pointer: fine) {
+  .btn { overflow: hidden; }
+  .btn::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -45%; width: 38%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: skewX(-18deg) translateX(0); opacity: 0; pointer-events: none;
+  }
+  .btn:hover::after { animation: btnSheen 0.7s var(--ease); }
+  .btn-primary::after { display: none; }
+}
+@keyframes btnSheen {
+  from { transform: skewX(-18deg) translateX(0); opacity: 0.9; }
+  to   { transform: skewX(-18deg) translateX(420%); opacity: 0; }
+}
+
+/* ---------- scrollbar ---------- */
+html { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.26) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22); border-radius: 100px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.4); }
+
+/* ---------- footer email underline ---------- */
+.contact-top h2 a {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 0.06em; background-repeat: no-repeat;
+  background-position: 0 94%;
+  transition: background-size 0.45s var(--ease);
+}
+.contact-top h2 a:hover { background-size: 100% 0.06em; }
