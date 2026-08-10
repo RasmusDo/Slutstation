@@ -370,7 +370,7 @@
                 <div class="field"><label for="f-admin-ends_at-6">Ends</label><input id="f-admin-ends_at-6" name="ends_at" type="datetime-local" /></div>
                 <div class="field"><label for="f-admin-capacity-7">Capacity</label><input id="f-admin-capacity-7" name="capacity" type="number" min="1" /></div>
                 <div class="field"><label for="f-admin-billetto_event_id-8">Billetto event id</label><input id="f-admin-billetto_event_id-8" name="billetto_event_id" placeholder="Optional" /></div>
-                <div class="field full"><label for="f-admin-image_url-9">Image</label><input id="f-admin-image_url-9" name="image_url" placeholder="assets/festival-crowd.jpg" />
+                <div class="field full"><label for="f-admin-image_url-9">Image</label><input id="f-admin-image_url-9" name="image_url" placeholder="Leave empty — upload a picture from the event page after creating" />
                   <small class="acc-hint">Shown on the front page. A file in assets/, or a full URL. Leave blank for the default.</small></div>
                 <div class="field full"><label for="f-admin-description-10">Short description</label><input id="f-admin-description-10" name="description" placeholder="One line for the event card." /></div>
                 <div class="field full"><label for="f-admin-info-23">Practical info</label>
@@ -393,6 +393,40 @@
           <div class="form-shell acc-panel" id="eventDetail" hidden>
             <div class="acc-card-head"><h3 id="evName">, </h3><p id="evMeta"></p></div>
             <div class="kpi-grid" id="evKpis"></div>
+
+            <!-- The card the public actually sees: the front page and the
+                 tickets page draw name, this text and this picture straight
+                 from the events row, live — no deploy involved. Editable
+                 here because "whoever wrote that row months ago" is not who
+                 should own what an announcement says tonight. -->
+            <div class="acc-card-head" style="margin-top:22px;">
+              <h3>Edit the card</h3>
+              <p>What the front page and the tickets page show for this event. Saving updates the live site immediately — the pages read this row on every visit.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="evCardDesc">Card text</label>
+                <input id="evCardDesc" placeholder="One line. It appears under the ticket button." />
+              </div>
+              <div class="field full">
+                <label for="evCardFile">Picture — upload one (recommended)</label>
+                <input id="evCardFile" type="file" accept="image/jpeg,image/png,image/webp" />
+                <small class="acc-hint">Stored in Supabase Storage with a permanent public URL. Portrait or 4:5 reads best on the card.</small>
+              </div>
+              <div class="field full">
+                <label for="evCardUrl">…or paste an image URL</label>
+                <input id="evCardUrl" placeholder="https://…  (a direct image link, ending in .jpg/.png/.webp)" />
+                <small class="acc-hint">Google Drive share links are converted automatically, but Drive hotlinks are flaky — uploading is the reliable way. Never use a local assets/… path; those change name on every deploy.</small>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" id="evCardSave">Save card</button>
+                <span class="form-msg" id="evCardMsg"></span>
+              </div>
+              <div class="field full" id="evCardPreviewWrap" hidden>
+                <label>Current picture</label>
+                <img id="evCardPreview" alt="Current event card picture" style="max-width:220px;border-radius:10px;border:1px solid var(--line);" />
+              </div>
+            </div>
 
             <!-- What the night cost: line items, cost or income, net at the
                  bottom. Billetto payouts are entered as income by hand. -->

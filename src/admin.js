@@ -509,8 +509,87 @@ async function openEvent(id) {
   );
   renderCosts(id);
   renderIncidents(id);
+  renderCardEditor(e);
   $("eventDetail").scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+// ---------------------------------------------------------------------------
+// EDIT THE CARD
+//
+// The front page and the tickets page draw name, description and picture
+// straight from the events row on every visit, so saving here changes the
+// live site immediately — no deploy. This exists because an events row is
+// written once at creation and was then untouchable, which is how a
+// months-old line of copy ended up fronting an announcement.
+//
+// Pictures: upload goes to the public `event-images` storage bucket
+// (schema-phase21) and stores the permanent public URL. A pasted URL is
+// accepted too — with the one conversion that history has earned: a Google
+// Drive SHARE link is an HTML page, not an image, so it is rewritten to the
+// direct-download form (and uploading is still the reliable path).
+// ---------------------------------------------------------------------------
+function renderCardEditor(e) {
+  if ($("evCardDesc")) $("evCardDesc").value = e.description || "";
+  if ($("evCardUrl")) $("evCardUrl").value = e.image_url || "";
+  if ($("evCardFile")) $("evCardFile").value = "";
+  msg($("evCardMsg"), "");
+  const wrap = $("evCardPreviewWrap"), img = $("evCardPreview");
+  if (wrap && img) {
+    wrap.hidden = !e.image_url;
+    if (e.image_url) {
+      img.src = e.image_url;
+      img.onerror = () => msg($("evCardMsg"), "The current picture URL doesn't load — replace it below.");
+    }
+  }
+}
+
+function driveToDirect(url) {
+  const m = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  return m ? `https://drive.google.com/uc?export=download&id=${m[1]}` : url;
+}
+
+$("evCardSave")?.addEventListener("click", async () => {
+  if (!currentEvent) return;
+  const m = $("evCardMsg");
+  const btn = $("evCardSave");
+  btn.disabled = true;
+  msg(m, "Saving…", "ok");
+
+  try {
+    let image_url;
+    const file = $("evCardFile")?.files?.[0];
+    if (file) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${currentEvent}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("event-images").upload(path, file, { contentType: file.type });
+      if (upErr) {
+        msg(m, /bucket/i.test(upErr.message)
+          ? "Uploads need schema-phase21-event-images.sql applied first."
+          : upErr.message);
+        btn.disabled = false;
+        return;
+      }
+      image_url = supabase.storage.from("event-images").getPublicUrl(path).data.publicUrl;
+    } else {
+      const typed = $("evCardUrl")?.value.trim() || "";
+      image_url = typed ? driveToDirect(typed) : null;
+    }
+
+    const { error } = await supabase.from("events").update({
+      description: $("evCardDesc")?.value.trim() || null,
+      image_url,
+    }).eq("id", currentEvent);
+    if (error) { msg(m, error.message); btn.disabled = false; return; }
+
+    msg(m, "Saved. The front page and tickets page show it on their next load.", "ok");
+    await openEvent(currentEvent);
+    await loadEvents();
+  } catch (err) {
+    msg(m, "Couldn't save — check the connection and try again.");
+  }
+  btn.disabled = false;
+});
 
 // ---------------------------------------------------------------------------
 // REPORTS FROM THE DOOR (phase 18) — read-only here; the writing end is one

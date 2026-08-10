@@ -12,6 +12,12 @@ import { initGlassLight } from "./liquid-glass.js";
 // black rectangle in production and nowhere else — the worst kind of bug.
 import HERO_720 from "../assets/hero-720.mp4?url";
 import HERO_480 from "../assets/hero-480.mp4?url";
+// The event card's fallback picture, imported for the same reason as the
+// videos above: a hand-written path misses the fingerprinting and 404s in
+// production — which is exactly how the card ended up dark once, and a
+// Google Drive share link (an HTML page, not an image file) is how it ended
+// up broken a second time. An import cannot rot.
+import EV_FALLBACK from "../assets/festival-crowd.jpg?url";
 
 /* ---- announcement bar ---- */
 const announceX = document.getElementById("announceX");
@@ -400,7 +406,7 @@ function countdownLine(iso) {
       return `
       <article class="event-card">
         <div class="thumb">
-          <img src="${esc(ev.image_url || "assets/festival-crowd.jpg")}" alt="${esc(ev.name)}" loading="lazy" decoding="async" />
+          <img src="${esc(ev.image_url || EV_FALLBACK)}" onerror="this.onerror=null;this.src='${EV_FALLBACK}'" alt="${esc(ev.name)}" loading="lazy" decoding="async" />
           <div class="date">
             <div class="d">${d.getDate()}</div>
             <div class="m">${esc(d.toLocaleDateString(getLang() === "sv" ? "sv-SE" : "en-GB", { month: "long" }))} ’${String(d.getFullYear()).slice(2)}</div>

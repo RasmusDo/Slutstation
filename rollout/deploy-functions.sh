@@ -12,7 +12,7 @@
 #
 # Deliberately NOT touched: ebas, tickets, stripe-webhook (unchanged this
 # round), anything in the dashboard, and the database — SQL goes in through
-# rollout/apply-phases-15-20.sql, by hand, the way it always has.
+# rollout/apply-phases-15-21.sql, by hand, the way it always has.
 # ============================================================================
 set -euo pipefail
 
@@ -59,7 +59,7 @@ fi
 
 echo ""
 echo "Done. Still yours to do, in the dashboard / GitHub:"
-echo "  1. Paste rollout/apply-phases-15-20.sql into the SQL editor and run it."
+echo "  1. Paste rollout/apply-phases-15-21.sql into the SQL editor and run it."
 echo "  2. Repo Settings -> Secrets -> Actions -> add SUPABASE_DB_URL, then run"
 echo "     the 'Database backup' workflow once from the Actions tab."
 echo "  3. Admin panel -> Overview -> Security -> enrol MFA (both admins)."

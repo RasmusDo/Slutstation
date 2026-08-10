@@ -8,7 +8,7 @@ long version lives as comments in each file it points to.
 
 ## The short path (everything below, compressed)
 
-1. **One paste** — `rollout/apply-phases-15-20.sql` into the Supabase SQL
+1. **One paste** — `rollout/apply-phases-15-21.sql` into the Supabase SQL
    editor (phases 15–20 concatenated in order; safe to re-run).
 2. **One command** — `./rollout/deploy-functions.sh` in a terminal (checks
    the CLI, deploys the five functions with the right flags, sets
@@ -78,6 +78,7 @@ nobody can sign up (the comment in `src/supabase-config.js` explains why):
 | `supabase/schema-phase17-admin-costs-stats.sql` | `event_costs` (the break-even card on every event) and `admin_stats()` (the Stats tab). |
 | `supabase/schema-phase18-door-notes-incidents.sql` | Door notes (12-month auto-retention, member-readable) + incident reports from the door. Also extends `staff_lookup` to carry the note. |
 | `supabase/schema-phase19-tier-distribution.sql` | Tier counts (four integers, no names) for the "Top N% of members" line on the tier card. The line stays hidden until this is applied, and also below 25 total members. |
+| `supabase/schema-phase21-event-images.sql` | The `event-images` storage bucket (public, image-only, 5 MB cap, admin-write) behind the panel's "Edit the card" upload. Until applied, uploads say so and pasted URLs still work. |
 
 The privacy policy on the front page already describes the phase 18 data —
 ship the site build together with (or before) applying that file.
