@@ -295,6 +295,7 @@ export const DICT = {
   "acct.emailLock":  { en: "Contact info@slutstation.se to change this.", sv: "Mejla info@slutstation.se för att ändra." },
   "acct.save":       { en: "Save changes",  sv: "Spara ändringar" },
   "acct.changePw":   { en: "Change password", sv: "Byt lösenord" },
+  "acct.pwCancel":   { en: "Cancel",          sv: "Avbryt" },
   "acct.soonT":      { en: "Coming soon",   sv: "På väg" },
   "acct.soonL":      { en: "What lands on this page next. Roughly in the order we're building it.",
                        sv: "Vad som landar här härnäst. Ungefär i den ordning vi bygger det." },

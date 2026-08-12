@@ -503,16 +503,75 @@ $("magicBtn")?.addEventListener("click", async () => {
   setMsg(msg, error ? friendlyAuthError(error) : t("acct.magicSent"), error ? "err" : "ok");
 });
 
-$("changePwBtn")?.addEventListener("click", async () => {
-  const msg = $("detailsMsg");
-  const { data } = await supabase.auth.getUser();
-  const email = data?.user?.email;
-  if (!email) return;
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/account.html`,
-  });
-  setMsg(msg, error ? friendlyAuthError(error) : t("acct.resetSent"), error ? "err" : "ok");
+// A member who is already signed in does not need an email to change their
+// password, and must not be sent one.
+//
+// This used to call resetPasswordForEmail, which goes to /recover — and
+// /recover sits behind Turnstile. There is no captcha widget on the details
+// panel, so there was no token to send, so the call failed for every member
+// every time with a 400, and friendlyAuthError showed them a message about a
+// bot check that was not on their screen. Nobody could change their password
+// from inside their own account, and the failure read as their fault.
+//
+// updateUser() changes the password on the session that is already open. No
+// email leaves the building, so it spends nothing against the 200/hour mail
+// limit and is not subject to the one-per-minute cooldown, and it works on a
+// night when the inbox does not. The signed-OUT "Forgot password?" button
+// still sends a link, which is the one case where an email is the point.
+//
+// Both of Supabase's stricter options for this endpoint — reauthentication,
+// and requiring the current password — are off, so this is a single call. If
+// either is ever switched on, this handler needs a nonce or the old password
+// and will start erroring until it gets one.
+$("changePwBtn")?.addEventListener("click", () => {
+  const box = $("pwChange");
+  const btn = $("changePwBtn");
+  if (!box || !btn) return;
+  box.hidden = !box.hidden;
+  setMsg($("detailsMsg"), "");
+  setMsg($("pwMsg"), "");
+  // dataset.i18n as well as the text, or switching language mid-edit would
+  // relabel the button back to "Change password" with the fields still open.
+  btn.dataset.i18n = box.hidden ? "acct.changePw" : "acct.pwCancel";
+  btn.textContent = t(btn.dataset.i18n);
+  if (!box.hidden) $("d-newpw")?.focus();
 });
+
+async function savePassword() {
+  const msg = $("pwMsg");
+  const a = $("d-newpw"), b = $("d-newpw2");
+  const pw = a?.value || "";
+  if (pw.length < 8) return setMsg(msg, t("err.password"));
+  if (pw !== (b?.value || "")) return setMsg(msg, t("err.pwMismatch"));
+
+  const btn = $("pwSaveBtn");
+  if (btn) { btn.disabled = true; btn.textContent = t("ui.updating"); }
+  const { error } = await supabase.auth.updateUser({ password: pw });
+  if (btn) { btn.disabled = false; btn.textContent = t("acct.updatePw"); }
+
+  if (error) return setMsg(msg, friendlyAuthError(error));
+
+  // Cleared rather than left sitting on screen: this page gets opened in a
+  // queue with people behind you.
+  if (a) a.value = "";
+  if (b) b.value = "";
+  $("pwChange").hidden = true;
+  const toggle = $("changePwBtn");
+  if (toggle) { toggle.dataset.i18n = "acct.changePw"; toggle.textContent = t("acct.changePw"); }
+  // Confirmation goes on the details panel, not on the box that just closed
+  // and took the message with it.
+  setMsg($("detailsMsg"), t("acct.pwUpdated"), "ok");
+}
+
+$("pwSaveBtn")?.addEventListener("click", savePassword);
+
+// The fields sit outside a <form>, so Enter would otherwise do nothing at all,
+// which reads as broken to anyone who types a password and presses return.
+["d-newpw", "d-newpw2"].forEach((id) =>
+  $(id)?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); savePassword(); }
+  })
+);
 
 $("resetForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();

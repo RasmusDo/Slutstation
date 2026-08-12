@@ -279,6 +279,40 @@ function bucket(v) {
   return Math.round(v / 16) * 16;
 }
 
+// The bucket a lens was actually built for, so the observer below can tell a
+// real change from a pixel of reflow noise.
+const lensedAt = new WeakMap();
+
+// A surface can change size without the window doing anything. A status line
+// appears under a form, a disclosure opens, a list finishes loading — and the
+// map inside its backdrop-filter is still the one drawn for the old box. The
+// map is stretched over a shape it was never drawn for, and the surface goes
+// soft.
+//
+// That is what "the sign-in panel goes blurry when I press Forgot password"
+// was: the reply line makes the card 39px taller, 647 to 686, which crosses
+// from the 640 bucket to the 688 one. Every other button on that panel does
+// the same thing, and so does opening the new change-password fields.
+//
+// Rebuilt only when the BUCKET changes, so a one-pixel reflow costs nothing
+// and a grid of cards still shares one map. Safe against the feedback loop
+// that usually bites ResizeObserver: lens() writes backdrop-filter and nothing
+// else, and backdrop-filter cannot change layout.
+const sizeWatch =
+  typeof ResizeObserver === "undefined"
+    ? null
+    : new ResizeObserver((entries) => {
+        const stale = [];
+        for (const e of entries) {
+          const r = e.target.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0 &&
+              `${bucket(r.width)}x${bucket(r.height)}` !== lensedAt.get(e.target)) {
+            stale.push([e.target, r]);
+          }
+        }
+        if (stale.length) idle(() => stale.forEach(([el, rect]) => lens(el, rect)));
+      });
+
 function lens(el, rect) {
   const w = bucket(rect.width);
   const h = bucket(rect.height);
@@ -297,6 +331,11 @@ function lens(el, rect) {
     el.style.webkitBackdropFilter = ""; // the prefixed property rejects url()
   }
   tracked.add(el);
+  // Recorded before observing, so the observer's first callback — which fires
+  // once on observe() with the size we just built for — is a no-op instead of
+  // an immediate rebuild.
+  lensedAt.set(el, `${w}x${h}`);
+  sizeWatch?.observe(el);
 }
 
 export function initLiquidGlass() {

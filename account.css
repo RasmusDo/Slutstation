@@ -1145,3 +1145,11 @@ body.demo-on::after {
 .wallet-btn span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; }
 .wallet-btn small { font-size: 0.68rem; color: rgba(255, 255, 255, 0.75); }
 .wallet-btn b { font-size: 0.98rem; font-weight: 600; color: #fff; letter-spacing: -0.01em; }
+
+/* ---------- changing a password from inside the account ----------
+   Sits just under the details form and outside it, so it needs its own top
+   rule rather than inheriting the form's spacing. Only ever on screen while
+   somebody is actually changing a password. */
+.pw-change {
+  margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line);
+}

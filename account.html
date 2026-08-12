@@ -487,6 +487,29 @@
               </div>
             </div>
           </form>
+
+          <!-- Outside the form above, deliberately. Two password inputs inside
+               it would mean Enter saves the member's address instead of their
+               password, and the details submit handler would have to know about
+               fields that are none of its business. The Enter key is wired up
+               in account.js instead. -->
+          <div class="pw-change" id="pwChange" hidden>
+            <div class="form-grid">
+              <div class="field full">
+                <label for="d-newpw"><span data-i18n="acct.newPw">New password</span> <span class="req">*</span></label>
+                <input id="d-newpw" type="password" autocomplete="new-password" minlength="8" />
+                <small class="acc-hint" data-i18n="acct.pwHint2">At least 8 characters.</small>
+              </div>
+              <div class="field full">
+                <label for="d-newpw2"><span data-i18n="acct.confirmPw">Confirm new password</span> <span class="req">*</span></label>
+                <input id="d-newpw2" type="password" autocomplete="new-password" minlength="8" />
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="pwSaveBtn" data-i18n="acct.updatePw">Update password</button>
+                <span class="form-msg" id="pwMsg" role="status"></span>
+              </div>
+            </div>
+          </div>
            </div>
           </div>
         </div>
