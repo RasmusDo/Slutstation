@@ -402,6 +402,10 @@ export const DICT = {
   "acct.walletFail": { en: "Couldn't fetch the card. Check your connection and try again.",
                        sv: "Kunde inte hämta kortet. Kontrollera uppkopplingen och försök igen." },
 
+  // ---- breadcrumbs + signed-out on-sale preview ----
+  "crumb.home":      { en: "Home", sv: "Hem" },
+  "tk.previewT":     { en: "On sale right now", sv: "Till försäljning just nu" },
+
   // ---- tickets page ----
   "tk.eyebrow":      { en: "Tickets",       sv: "Biljetter" },
   "tk.membersT":     { en: "Members only",  sv: "Endast för medlemmar" },

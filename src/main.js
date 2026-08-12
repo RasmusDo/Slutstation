@@ -5,6 +5,7 @@
 
 import { initI18n, t, getLang } from "./i18n.js";
 import { initGlassLight } from "./liquid-glass.js";
+import { initAnnounce, announceEvent, daysUntil } from "./announce.js";
 
 // Imported rather than written as a path string so the build emits and
 // fingerprints them. A runtime "/assets/hero-720.mp4" would be invisible to
@@ -19,15 +20,11 @@ import HERO_480 from "../assets/hero-480.mp4?url";
 // up broken a second time. An import cannot rot.
 import EV_FALLBACK from "../assets/festival-crowd.jpg?url";
 
-/* ---- announcement bar ---- */
-const announceX = document.getElementById("announceX");
-try {
-  if (localStorage.getItem("ss-announce") === "off") document.body.classList.add("no-announce");
-} catch (e) {}
-announceX?.addEventListener("click", () => {
-  document.body.classList.add("no-announce");
-  try { localStorage.setItem("ss-announce", "off"); } catch (e) {}
-});
+/* ---- announcement bar ----
+   Shared module (announce.js). fetchLive is off because initUpcomingEvents
+   below reads the same feed for the cards and announces from it — one
+   request, not two. */
+initAnnounce({ fetchLive: false });
 
 /* ---- language ----
    Mounted before anything renders so the first paint is already right. */
@@ -270,6 +267,16 @@ if (heroBg) {
     const spMax = doc.scrollHeight - window.innerHeight;
     doc.style.setProperty("--sp", spMax > 0 ? (window.scrollY / spMax).toFixed(4) : "0");
 
+    // The sticky ticket bar (phones, and only when announceEvent() armed it):
+    // in exactly while the hero — which has its own CTA — is out of view.
+    // The body class lifts the cookie gear out from underneath it.
+    const bar = document.getElementById("ticketBar");
+    if (bar && !bar.hidden) {
+      const on = hb >= 0.95;
+      bar.classList.toggle("show", on);
+      document.body.classList.toggle("tbar-on", on);
+    }
+
     // Once the blurred still has fully covered it, the video is painting
     // frames nobody can see. Stop it, and start it again on the way back up.
     if (heroVideo && heroVideo.src) {
@@ -302,48 +309,6 @@ if (heroBg) {
 // Swap the announcement bar over to a live event. Untouched while nothing is
 // announced, so the hand-written "no events yet / follow us" state stands on
 // its own for anyone whose connection or ad blocker stops the fetch below.
-// Whole days between now and doors, counted from midnight to midnight so an
-// event at 22:00 tonight reads "tonight" all day rather than flipping to
-// "tomorrow" at lunchtime.
-function daysUntil(iso) {
-  const then = new Date(iso); const now = new Date();
-  const a = new Date(then.getFullYear(), then.getMonth(), then.getDate());
-  const b = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((a - b) / 86400000);
-}
-
-function announceEvent(ev) {
-  const bar = document.getElementById("announce");
-  if (!bar || !ev) return;
-  const textEl = bar.querySelector('[data-i18n="announce.text"]');
-  const linkEl = bar.querySelector('[data-i18n="announce.link"]');
-  if (!textEl || !linkEl) return;
-
-  const when = new Date(ev.starts_at).toLocaleDateString(
-    getLang() === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "long" });
-
-  // A date tells you when it is. A countdown gives you a reason to come back
-  // tomorrow, and it changes on its own, which a date never does.
-  const days = daysUntil(ev.starts_at);
-  const key  = days === 0 ? "announce.tonight"
-             : days === 1 ? "announce.tomorrow"
-             : days > 1 && days <= 30 ? "announce.inDays"
-             : "announce.live";
-
-  // Re-point the i18n keys as well as the text, so a later language switch
-  // re-renders the live wording instead of reverting to "nothing announced".
-  const vars = { name: ev.name, date: when, days };
-  textEl.dataset.i18n = key;
-  textEl.dataset.i18nVars = JSON.stringify(vars);
-  textEl.textContent = t(key, vars);
-
-  linkEl.dataset.i18n = "announce.liveLink";
-  linkEl.textContent = t("announce.liveLink");
-  linkEl.href = "/tickets.html";
-  linkEl.removeAttribute("target");
-  linkEl.removeAttribute("rel");
-}
-
 // The same count, as a line on the card. Empty once the night has started,
 // because "0 days" on the morning after is worse than saying nothing.
 function countdownLine(iso) {

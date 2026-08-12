@@ -26,6 +26,11 @@
   </script>
   <link rel="stylesheet" crossorigin href="/styles.css">
   <link rel="stylesheet" crossorigin href="/account.css">
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+    {"@type":"ListItem","position":1,"name":"Home","item":"https://www.slutstation.se/"},
+    {"@type":"ListItem","position":2,"name":"Tickets","item":"https://www.slutstation.se/tickets.html"}]}
+  </script>
 </head>
 <body class="inner">
   <!-- ===================== ANNOUNCEMENT BAR ===================== -->
@@ -68,6 +73,12 @@
   <main class="page acc-page">
     <div class="wrap">
 
+      <!-- Breadcrumbs: one level deep, which is exactly how deep this site
+           goes. Doubles as structured data (BreadcrumbList in head). -->
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="/" data-i18n="crumb.home">Home</a><span class="crumb-sep" aria-hidden="true">›</span><span aria-current="page" data-i18n="nav.tickets">Tickets</span>
+      </nav>
+
       <!-- ================= LOADING ================= -->
       <section id="stateLoading">
         <div class="form-shell acc-narrow acc-loading">
@@ -83,6 +94,10 @@
           <h2 data-i18n="tk.membersT">Members only</h2>
           <p style="margin-inline:auto;" data-i18n="tk.membersL">Tickets go to members of Kulturföreningen Musikbopp. Membership is free, create an account and you're in.</p>
         </div>
+        <!-- What's actually on sale, shown BEFORE the sign-in wall: the same
+             public feed the front page reads, so the gate names the goods and
+             gates only the buying (tickets.js fills it). -->
+        <div id="authOnSale"></div>
         <div class="form-shell acc-narrow" style="text-align:center;">
           <p style="color:var(--muted);" data-i18n="tk.signinL">Sign in, or create your account, to buy tickets.</p>
           <div class="form-actions" style="justify-content:center; margin-top:20px;">
@@ -176,5 +191,6 @@
   </footer>
 
   <script type="module" src="/src/tickets.js"></script>
+  <script src="/slutstation-meta-events.js" defer></script>
 </body>
 </html>

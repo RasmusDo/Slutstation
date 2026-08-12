@@ -10,6 +10,7 @@
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, TURNSTILE_SITE_KEY, ENTRY_CODE, INVITE_CODE, WALLET_CARD } from "./supabase-config.js";
 import { initI18n, t, getLang } from "./i18n.js";
+import { initAnnounce } from "./announce.js";
 import { initGlassLight } from "./liquid-glass.js";
 
 
@@ -80,13 +81,10 @@ const sdkReady = importWithTimeout(
   });
 
 (function initChrome() {
-  try {
-    if (localStorage.getItem("ss-announce") === "off") document.body.classList.add("no-announce");
-  } catch (e) {}
-  $("announceX")?.addEventListener("click", () => {
-    document.body.classList.add("no-announce");
-    try { localStorage.setItem("ss-announce", "off"); } catch (e) {}
-  });
+  // Announcement bar: dismissal, the ×, and the live-event wording all come
+  // from the shared module now — this page used to bind the × but never
+  // learn an event was on, so its bar said "nothing announced" mid-release.
+  initAnnounce();
 
   const nav = $("nav");
   const onScroll = () => nav?.classList.toggle("scrolled", window.scrollY > 30);
@@ -421,6 +419,13 @@ $("signupForm")?.addEventListener("submit", async (e) => {
   // of the form actually went anywhere, so we can say so instead of showing a
   // success screen over a submission that vanished.
   const djOk = await maybeSendDjApplication(d);
+
+  // Analytics bridge: the consent-gated pixel script maps this to
+  // CompleteRegistration + Lead, reading the form's own fields for advanced
+  // matching — which is why it fires BEFORE form.reset() wipes them. A
+  // dispatch with no listener (marketing declined) costs nothing.
+  document.dispatchEvent(new CustomEvent("ss:signup"));
+  if (djOk === true) document.dispatchEvent(new CustomEvent("ss:dj"));
 
   // Email confirmation on -> no session yet, so eBas registration happens on
   // their first signed-in visit instead (see loadAccountInner).

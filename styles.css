@@ -1938,3 +1938,49 @@ html { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.26) transpa
   transition: background-size 0.45s var(--ease);
 }
 .contact-top h2 a:hover { background-size: 100% 0.06em; }
+
+/* ---------- tap targets on touch ----------
+   Apple's floor is 44pt. The language switch and the announcement bar's
+   dismiss both sat under it; padding, not font size, closes the gap. */
+@media (pointer: coarse) {
+  .lang-switch button { min-height: 44px; padding-block: 10px; }
+  .announce .x { width: 40px; height: 40px; }
+}
+
+/* ---------- sticky ticket bar, phones only ----------
+   Exists while an event is announced (main.js arms it from the same feed as
+   the banner and the card) and shows once the hero's own CTA has scrolled
+   away. Near-opaque fill on purpose: readable on every tier without needing
+   a tier exception, and the blur is only garnish on top.
+   The [hidden] attribute still wins over everything here. */
+.ticket-bar { display: none; }
+@media (max-width: 700px) {
+  .ticket-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1150;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 13px 18px calc(13px + env(safe-area-inset-bottom));
+    background: rgba(10, 11, 15, 0.92);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+    border-top: 1px solid var(--line-2);
+    transform: translateY(110%);
+    transition: transform 0.35s var(--ease);
+  }
+  .ticket-bar.show { transform: translateY(0); }
+  .ticket-bar .tb-name {
+    font-weight: 600; font-size: 0.95rem; color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  }
+  .ticket-bar .tb-cta {
+    flex-shrink: 0; font-weight: 600; font-size: 0.92rem;
+    background: #fff; color: #0a0b0f; border-radius: var(--r-sm);
+    padding: 10px 16px;
+  }
+  /* The cookie gear lives in the same corner; lift it while the bar is up. */
+  body.tbar-on .cookie-trigger {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    transition: bottom 0.35s var(--ease);
+  }
+  /* The photo viewer owns the whole screen. */
+  body.viewing .ticket-bar { display: none; }
+}

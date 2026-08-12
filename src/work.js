@@ -13,11 +13,15 @@
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
 import { initI18n, t, getLang } from "./i18n.js";
+import { initAnnounce } from "./announce.js";
 import { initGlassLight } from "./liquid-glass.js";
 
 // Language first: it must survive anything that happens below.
 initGlassLight();
 initI18n();
+// The announcement bar: this page shipped without ANY handling — stuck
+// default text, dead dismiss — which is what the shared module ends.
+initAnnounce();
 
 // The Supabase SDK is BUNDLED — installed from npm and code-split by Vite into
 // a chunk served from our own origin, so no third-party CDN sits in this
@@ -206,7 +210,13 @@ $("volForm")?.addEventListener("submit", async (e) => {
   }, form, msg);
   busy(form, false);
 
-  if (ok) { setMsg(msg, t("work.sent"), "ok"); await load(); }
+  if (ok) {
+    setMsg(msg, t("work.sent"), "ok");
+    // Analytics bridge -> Lead in the consent-gated pixel script; free when
+    // there is no listener.
+    document.dispatchEvent(new CustomEvent("ss:apply", { detail: { kind: "volunteer" } }));
+    await load();
+  }
 });
 
 $("creForm")?.addEventListener("submit", async (e) => {
@@ -235,7 +245,11 @@ $("creForm")?.addEventListener("submit", async (e) => {
   }, form, msg);
   busy(form, false);
 
-  if (ok) { setMsg(msg, t("work.sent"), "ok"); await load(); }
+  if (ok) {
+    setMsg(msg, t("work.sent"), "ok");
+    document.dispatchEvent(new CustomEvent("ss:apply", { detail: { kind: "creator" } }));
+    await load();
+  }
 });
 
 // ---------------------------------------------------------------------------

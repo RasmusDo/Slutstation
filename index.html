@@ -516,6 +516,16 @@
   </footer>
   </main>
 
+  <!-- Sticky ticket bar, phones only. Armed by main.js when an event is
+       actually announced (same feed as the card and the banner), shown only
+       once the hero — which has its own CTA — is scrolled away. The click is
+       an ordinary tickets.html link, so the pixel's TicketIntent handler
+       catches it with no extra wiring. -->
+  <a class="ticket-bar" id="ticketBar" href="/tickets.html" hidden>
+    <span class="tb-name" id="ticketBarName"></span>
+    <span class="tb-cta" data-i18n="events.get">Get tickets</span>
+  </a>
+
   <!-- Cookie overlay backdrop -->
   <div class="cookie-overlay hidden" id="cookieOverlay" aria-hidden="true"></div>
 

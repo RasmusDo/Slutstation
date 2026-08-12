@@ -12,6 +12,7 @@
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, OWN_TICKET_SALES } from "./supabase-config.js";
 import { initI18n, t, getLang } from "./i18n.js";
+import { initAnnounce } from "./announce.js";
 import { initGlassLight } from "./liquid-glass.js";
 
 const $ = (id) => document.getElementById(id);
@@ -68,13 +69,10 @@ let booted = false;
 // chrome (same as the other pages, this one doesn't load main.js either)
 // ---------------------------------------------------------------------------
 (function initChrome() {
-  try {
-    if (localStorage.getItem("ss-announce") === "off") document.body.classList.add("no-announce");
-  } catch (e) {}
-  $("announceX")?.addEventListener("click", () => {
-    document.body.classList.add("no-announce");
-    try { localStorage.setItem("ss-announce", "off"); } catch (e) {}
-  });
+  // Announcement bar: dismissal, the ×, and the live-event wording all come
+  // from the shared module now — this page used to bind the × but never
+  // learn an event was on, so its bar said "nothing announced" mid-release.
+  initAnnounce();
   const nav = $("nav");
   const onScroll = () => nav?.classList.toggle("scrolled", window.scrollY > 30);
   onScroll();
@@ -92,6 +90,38 @@ function show(id) {
   ["stateLoading", "stateAuth", "stateBuy", "stateDone"].forEach((s) => {
     const el = $(s); if (el) el.hidden = s !== id;
   });
+  // The signed-out wall used to hide WHAT was on sale, which made the climb
+  // feel unmotivated: you were asked to sign in for something the page would
+  // not name. The preview needs no session — the same public RPC the front
+  // page uses — so the gate can show the goods and gate only the buying.
+  if (id === "stateAuth") renderAuthOnSale();
+}
+
+let authOnSaleDrawn = false;
+async function renderAuthOnSale() {
+  const host = $("authOnSale");
+  if (!host || authOnSaleDrawn || !supabase) return;
+  authOnSaleDrawn = true;
+  try {
+    const { data } = await supabase.rpc("tickets_on_sale");
+    if (!Array.isArray(data) || !data.length) return;
+    const ev = data[0];
+    const d = new Date(ev.starts_at);
+    const when = d.toLocaleDateString(getLang() === "sv" ? "sv-SE" : "en-GB",
+      { day: "numeric", month: "long" });
+    const from = (ev.types || []).filter((ty) => ty.open && ty.kind === "entry")
+      .map((ty) => ty.price_ore).sort((a, b) => a - b)[0];
+    host.innerHTML = `
+      <div class="form-shell acc-panel tk-preview">
+        ${ev.image_url ? `<img src="${esc(ev.image_url)}" alt="" loading="lazy" decoding="async" />` : ""}
+        <div class="tk-preview-txt">
+          <span class="eyebrow">${esc(t("tk.previewT"))}</span>
+          <h3>${esc(ev.name)}</h3>
+          <p>${esc(ev.venue || t("events.tba"))} · ${esc(when)}${from != null
+            ? ` · ${esc(t("events.from"))} ${(from / 100).toLocaleString("sv-SE")} kr` : ""}</p>
+        </div>
+      </div>`;
+  } catch (e) { /* the wall still works without the poster on it */ }
 }
 
 const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) =>
@@ -356,6 +386,13 @@ async function checkout(block, ev) {
   });
   if (!items.length) return;
 
+  // Analytics bridge: the consent-gated pixel script listens for this and
+  // maps it to InitiateCheckout. A dispatch with no listener is free, so
+  // this costs nothing for visitors who declined marketing cookies.
+  document.dispatchEvent(new CustomEvent("ss:checkout", {
+    detail: { name: ev.event_name, qty: items.reduce((a, i) => a + i.qty, 0) },
+  }));
+
   const label = btn.textContent;
   btn.disabled = true;
   btn.textContent = t("tk.toStripe");
@@ -523,6 +560,12 @@ sdkReady.then((ok) => {
   });
 });
 
-// The event blocks are built in JS, so they have to be rebuilt on a switch.
-document.addEventListener("ss:lang", () => { if (booted) load(); });
+// The event blocks are built in JS, so they have to be rebuilt on a switch —
+// and so does the signed-out preview, whose once-guard would otherwise hold
+// the old language's render.
+document.addEventListener("ss:lang", () => {
+  if (booted) load();
+  authOnSaleDrawn = false;
+  if ($("stateAuth") && !$("stateAuth").hidden) renderAuthOnSale();
+});
 setTimeout(boot, 1200);

@@ -548,6 +548,29 @@ function driveToDirect(url) {
   return m ? `https://drive.google.com/uc?export=download&id=${m[1]}` : url;
 }
 
+// A poster export or a screenshot arrives here at half a megabyte or more of
+// PNG; the card slot never renders wider than ~750px. Downscale and re-encode
+// to JPEG in the browser before upload, so every future picture is ~100KB
+// without anyone having to know what an image format is. Falls back to the
+// original file if the browser can't decode it (or if the re-encode somehow
+// comes out bigger).
+async function compressCardImage(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1080 / bmp.width, 1);
+    if (scale === 1 && file.size < 250 * 1024 && file.type !== "image/png") return file;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.85));
+    if (blob && blob.size < file.size) {
+      return new File([blob], "card.jpg", { type: "image/jpeg" });
+    }
+  } catch (e) { /* exotic format: send the original, the bucket caps at 5MB */ }
+  return file;
+}
+
 $("evCardSave")?.addEventListener("click", async () => {
   if (!currentEvent) return;
   const m = $("evCardMsg");
@@ -557,8 +580,9 @@ $("evCardSave")?.addEventListener("click", async () => {
 
   try {
     let image_url;
-    const file = $("evCardFile")?.files?.[0];
-    if (file) {
+    const picked = $("evCardFile")?.files?.[0];
+    if (picked) {
+      const file = await compressCardImage(picked);
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `${currentEvent}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage

@@ -134,6 +134,14 @@
         return;
       }
 
+      if (/tickets\.html/i.test(href)) {
+        var iCard = cardOf(node);
+        trackCustom('TicketIntent', {
+          content_name: cardTitle(iCard) || text || 'Tickets link'
+        });
+        return;
+      }
+
       
       var card = cardOf(node);
       if (card) {
@@ -173,7 +181,7 @@
 
     
     var success = document.getElementById('formSuccess');
-    var form = document.getElementById('applyForm');
+    var form = document.getElementById('applyForm') || document.getElementById('signupForm');
 
     function readUserData() {
       if (!form) return null;
@@ -235,6 +243,26 @@
     } else if (form) {
       form.addEventListener('submit', function () { setTimeout(registrationComplete, 1500); });
     }
+
+    document.addEventListener('ss:checkout', function (e) {
+      track('InitiateCheckout', {
+        content_name: (e.detail && e.detail.name) || 'Tickets',
+        content_category: 'ticket',
+        content_type: 'product',
+        num_items: (e.detail && e.detail.qty) || undefined,
+        currency: CURRENCY
+      });
+    });
+    document.addEventListener('ss:signup', function () { registrationComplete(); });
+    document.addEventListener('ss:dj', function () {
+      trackCustom('DJApplication', {});
+    });
+    document.addEventListener('ss:apply', function (e) {
+      track('Lead', {
+        content_name: 'Work application: ' + ((e.detail && e.detail.kind) || 'unknown'),
+        currency: CURRENCY
+      });
+    });
   }
 
   window.__ssPixelBoot = boot;
