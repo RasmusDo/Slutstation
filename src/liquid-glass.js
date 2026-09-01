@@ -314,6 +314,10 @@ const sizeWatch =
       });
 
 function lens(el, rect) {
+  // Hands off while someone is typing in this panel — see the focus block
+  // below lens() for why. Without this line a background rescan (a mutation,
+  // a resize) would quietly re-apply the lens mid-keystroke.
+  if (typingIn.has(el)) return;
   const w = bucket(rect.width);
   const h = bucket(rect.height);
   if (w < 48 || h < 32) return;
@@ -337,6 +341,50 @@ function lens(el, rect) {
   lensedAt.set(el, `${w}x${h}`);
   sizeWatch?.observe(el);
 }
+
+// ---------------------------------------------------------------------------
+// The lens steps aside while you type.
+//
+// Chromium composites its native popups — the saved-login dropdown above all —
+// straight over the page, and a backdrop-filter that runs through an SVG
+// displacement map is exactly the kind of layer it then degrades or
+// re-rasterises soft. That is the "sign-in goes blurry when I pick a saved
+// email" bug: same family as the resize softness ResizeObserver already
+// fixes, but triggered by the browser's own UI, which no observer can see.
+//
+// So: the moment a field inside a lensed panel takes focus, that panel falls
+// back to the stylesheet's plain frost (dropping the inline filter is all it
+// takes), and the lens is rebuilt fresh once focus has left the panel. Nobody
+// reads refraction while filling in a form, and a rebuilt map is also the
+// correct answer if the panel changed size mid-typing (Turnstile expanding,
+// a validation row appearing).
+// ---------------------------------------------------------------------------
+const typingIn = new Set();
+
+document.addEventListener("focusin", (e) => {
+  const t = e.target;
+  if (!(t instanceof Element) || !t.matches("input, textarea, select")) return;
+  for (const host of tracked) {
+    if (host.contains(t)) {
+      typingIn.add(host);
+      host.style.backdropFilter = "";   // the stylesheet's frost takes over
+      break;
+    }
+  }
+});
+
+document.addEventListener("focusout", () => {
+  // After focus settles: tabbing between two fields of the same panel must
+  // not thrash the lens off and on between them.
+  setTimeout(() => {
+    for (const host of [...typingIn]) {
+      if (host.contains(document.activeElement)) continue;
+      typingIn.delete(host);
+      const r = host.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) lens(host, r);
+    }
+  }, 0);
+});
 
 export function initLiquidGlass() {
   // url() inside backdrop-filter is Chromium-only. In Safari it parses but

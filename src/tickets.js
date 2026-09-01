@@ -111,6 +111,20 @@ async function renderAuthOnSale() {
       { day: "numeric", month: "long" });
     const from = (ev.types || []).filter((ty) => ty.open && ty.kind === "entry")
       .map((ty) => ty.price_ore).sort((a, b) => a - b)[0];
+    // The preview carries the buy button itself now that purchase is open to
+    // everyone: a signed-out visitor who browsed here plainly (no ?buy) can
+    // still reach Billetto in one press. With embed.js loaded the press opens
+    // Billetto's overlay on this page (its interceptor claims every /select
+    // link); with the script blocked, the same href is a working link. The
+    // pixel's click handler counts billetto.se hrefs as InitiateCheckout on
+    // its own.
+    const billettoOnly = ev.billetto_event_id &&
+      (!OWN_TICKET_SALES || !(ev.types || []).some((ty) => ty.open));
+    if (billettoOnly) loadBillettoWidget();
+    const buyBtn = billettoOnly
+      ? `<a class="btn btn-primary btn-sm" href="https://billetto.se/e/e-${
+          encodeURIComponent(String(ev.billetto_event_id).trim())}/select?color=%23ff2a2a">${esc(t("events.get"))}</a>`
+      : "";
     host.innerHTML = `
       <div class="form-shell acc-panel tk-preview">
         ${ev.image_url ? `<img src="${esc(ev.image_url)}" alt="" loading="lazy" decoding="async" />` : ""}
@@ -119,6 +133,7 @@ async function renderAuthOnSale() {
           <h3>${esc(ev.name)}</h3>
           <p>${esc(ev.venue || t("events.tba"))} · ${esc(when)}${from != null
             ? ` · ${esc(t("events.from"))} ${(from / 100).toLocaleString("sv-SE")} kr` : ""}</p>
+          ${buyBtn ? `<p style="margin-top:12px;">${buyBtn}</p>` : ""}
         </div>
       </div>`;
   } catch (e) { /* the wall still works without the poster on it */ }
@@ -506,7 +521,83 @@ async function load() {
 
   ownedEntry = new Set((mine || []).filter((x) => x.kind === "entry").map((x) => x.event_id));
   renderEvents(onSale || []);
+  return onSale || [];
 }
+
+// ---------------------------------------------------------------------------
+// One click from the front page — account or not.
+//
+// Every buy-intent link on the site (event card, announcement bar, the
+// phone's sticky bar) carries ?buy=1, and when exactly one event is on sale
+// and Billetto is selling it, this page forwards straight to Billetto's
+// ticket selection WITHOUT asking who you are. Membership stopped being a
+// purchase gate by decision (August 2026): it is still free and still
+// required to attend — the wall below, the front page and the Billetto
+// event description all say "join before the night, with the same email
+// you buy with, so the night counts toward your tier" — but it now happens
+// around the purchase instead of in front of it.
+//
+// Module scope and plain fetch on purpose: the forward must not wait for
+// the SDK chunk, and it has no use for a session. No forward when several
+// events are on sale or our own releases are open (a cart needs choices);
+// the nav's plain "Tickets" link carries no ?buy, so browsing to the
+// overview still lands on the page.
+//
+// location.replace, not href: Back must return to the front page, not to
+// an instantly re-forwarding tickets page.
+// ---------------------------------------------------------------------------
+(function fastOpenBilletto() {
+  if (new URLSearchParams(location.search).get("buy") !== "1") return;
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/tickets_on_sale`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+  })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((events) => {
+      if (!Array.isArray(events) || events.length !== 1) return;
+      const ev = events[0];
+      const billettoOnly = ev.billetto_event_id &&
+        (!OWN_TICKET_SALES || !(ev.types || []).some((ty) => ty.open));
+      if (!billettoOnly) return;
+
+      // Keep the funnel honest on the fast path: the Billetto button this
+      // skips is what the pixel would have counted. Best effort — on a fast
+      // network the pixel may still be booting, and that is acceptable.
+      document.dispatchEvent(new CustomEvent("ss:checkout", {
+        detail: { name: ev.name, qty: 1 },
+      }));
+
+      // The checkout opens as Billetto's overlay ON this page rather than a
+      // redirect: embed.js installs window.$billetto with a manager whose
+      // openCheckout() attaches the iframe overlay (read from the script
+      // itself — the same call its own click-interceptor makes when someone
+      // presses any of our /select links). The page stays underneath, so
+      // closing the overlay lands you back on tickets, not on billetto.se.
+      const id = `e-${String(ev.billetto_event_id).trim()}`;
+      loadBillettoWidget();
+      const t0 = Date.now();
+      (function tryOpen() {
+        const mgr = window.$billetto && window.$billetto.manager;
+        if (mgr && typeof mgr.openCheckout === "function") {
+          mgr.openCheckout(id, { color: "#ff2a2a", organization: "billetto.se" });
+          return;
+        }
+        if (Date.now() - t0 > 6000) {
+          // embed.js never arrived (ad blocker, outage). The old redirect is
+          // the fallback, so one click still ends at a checkout either way.
+          location.replace(`https://billetto.se/e/${id}/select?color=%23ff2a2a`);
+          return;
+        }
+        setTimeout(tryOpen, 120);
+      })();
+    })
+    .catch(() => { /* fall through to the normal page */ });
+})();
 
 async function boot() {
   if (booted) return;

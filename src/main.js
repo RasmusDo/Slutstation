@@ -382,7 +382,7 @@ function countdownLine(iso) {
           <div class="loc">◷ ${esc(ev.venue || t("events.tba"))} · ${esc(when)}</div>
           ${countdownLine(ev.starts_at)}
           ${open || viaBilletto
-            ? `<a class="btn btn-primary btn-sm" href="/tickets.html">${t("events.get")}${!viaBilletto && from != null ? ` · ${t("events.from")} ${(from / 100).toLocaleString("sv-SE")} kr` : ""}</a>`
+            ? `<a class="btn btn-primary btn-sm" href="/tickets.html?buy=1">${t("events.get")}${!viaBilletto && from != null ? ` · ${t("events.from")} ${(from / 100).toLocaleString("sv-SE")} kr` : ""}</a>`
             : `<a class="btn btn-sm" href="/tickets.html">${t("events.soldout")}</a>`}
           ${ev.description ? `<p class="ev-desc">${esc(ev.description)}</p>` : ""}
         </div>

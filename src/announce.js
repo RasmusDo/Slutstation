@@ -59,7 +59,9 @@ export function announceEvent(ev) {
 
   linkEl.dataset.i18n = "announce.liveLink";
   linkEl.textContent = t("announce.liveLink");
-  linkEl.href = "/tickets.html";
+  // ?buy=1: for a signed-in member with one Billetto event on sale, the
+  // tickets page forwards straight to Billetto — one click from any page.
+  linkEl.href = "/tickets.html?buy=1";
   linkEl.removeAttribute("target");
   linkEl.removeAttribute("rel");
 

@@ -57,8 +57,8 @@ export const DICT = {
   "events.eyebrow":  { en: "Events",        sv: "Event" },
   "events.title":    { en: "Events",        sv: "Event" },
   "events.lead":     {
-    en: "Access to our events is strictly for members. We announce our events on Instagram, stay tuned.",
-    sv: "Våra event är bara för medlemmar. Vi släpper dem på Instagram, häng med där.",
+    en: "Anyone can buy a ticket; attending takes a free membership — join before the night. We announce our events on Instagram, stay tuned.",
+    sv: "Vem som helst kan köpa biljett; för att komma in krävs gratis medlemskap — bli medlem innan kvällen. Vi släpper våra event på Instagram, häng med där.",
   },
   "events.upcoming": { en: "Upcoming",      sv: "Kommande" },
   "events.past":     { en: "Past Events",   sv: "Tidigare event" },
@@ -408,10 +408,10 @@ export const DICT = {
 
   // ---- tickets page ----
   "tk.eyebrow":      { en: "Tickets",       sv: "Biljetter" },
-  "tk.membersT":     { en: "Members only",  sv: "Endast för medlemmar" },
-  "tk.membersL":     { en: "Tickets go to members of Kulturföreningen Musikbopp. Membership is free, create an account and you're in.",
-                       sv: "Biljetter går till medlemmar i Kulturföreningen Musikbopp. Medlemskapet är gratis, skapa ett konto så är du med." },
-  "tk.signinL":      { en: "Sign in, or create your account, to buy tickets.", sv: "Logga in, eller skapa ett konto, för att köpa biljett." },
+  "tk.membersT":     { en: "Get your ticket", sv: "Skaffa din biljett" },
+  "tk.membersL":     { en: "Tickets are sold through Billetto and open to everyone. Membership is free and required to attend — join before the night, with the same email you buy with, so the night counts toward your tier.",
+                       sv: "Biljetter säljs via Billetto och är öppna för alla. Medlemskap är gratis och krävs för att komma in — bli medlem innan kvällen, med samma e-post som du köper med, så räknas kvällen mot din tier." },
+  "tk.signinL":      { en: "Already a member? Sign in to see your tickets and your tier.", sv: "Redan medlem? Logga in för att se dina biljetter och din tier." },
   "tk.signinCta":    { en: "Sign in / create account", sv: "Logga in / skapa konto" },
   "tk.onsaleT":      { en: "What's on sale", sv: "Till försäljning" },
   "tk.myTickets":    { en: "My tickets",    sv: "Mina biljetter" },

@@ -494,11 +494,14 @@ $("magicBtn")?.addEventListener("click", async () => {
   if (!EMAIL_RE.test(email || "")) return setMsg(msg, t("acct.resendNeedEmail"));
 
   setMsg(msg, t("acct.resendSending"), "ok");
+  // The link lands back here; carrying ?next through means a magic-link
+  // sign-in that began on the tickets wall ends on the tickets page.
+  const next = safeNext();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${window.location.origin}/account.html`,
+      emailRedirectTo: `${window.location.origin}/account.html${next ? `?next=${encodeURIComponent(next)}` : ""}`,
       captchaToken: captchaToken("signin"),
     },
   });
@@ -828,12 +831,37 @@ $("detailsForm")?.addEventListener("submit", async (e) => {
 });
 
 // ---------------------------------------------------------------------------
+// THE WAY BACK
+//
+// The tickets page's members wall sends people here with ?next=/tickets.html
+// so signing in doesn't strand them on their account: the flow they left is
+// the flow they return to, automatically. Only ever a same-site path — a
+// full URL, a protocol, or a scheme-relative //host is refused, so nobody
+// can mint a slutstation.se link that signs you in and hands you to another
+// site.
+// ---------------------------------------------------------------------------
+function safeNext() {
+  const raw = new URLSearchParams(window.location.search).get("next") || "";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://") || raw.includes("\\")) return null;
+  return raw;
+}
+
+// ---------------------------------------------------------------------------
 // LOAD
 // ---------------------------------------------------------------------------
 async function loadAccount() {
   if (loading) return;
   loading = true;
   try {
+    // Signed in with somewhere to be: go there instead of drawing the
+    // account. Covers the password sign-in a moment ago, a magic-link
+    // return, and someone who was signed in all along. Password recovery
+    // outranks it — finishing the reset is why they're here.
+    const next = safeNext();
+    if (next && !recovering) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) { window.location.replace(next); return; }
+    }
     await loadAccountInner();
     loadedOnce = true;
   } finally {
